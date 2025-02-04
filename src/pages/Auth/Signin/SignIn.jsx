@@ -4,12 +4,27 @@ import { useNavigate } from 'react-router-dom';
 const SignIn = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [errors, setErrors] = useState({});
   const navigate = useNavigate();
+
+  const validate = () => {
+    let newErrors = {}
+    if (!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+      newErrors.email = 'Введите корректный email'
+    }
+    if (password.length < 6) {
+      newErrors.password = 'Пароль должен содержать минимум 6 символов';
+    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  }
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log('Email:', email, 'Password:', password);
-    navigate('/main');
+    if (validate()) {
+      console.log('Email:', email, 'Password:', password);
+      navigate('/main');
+    }
   };
 
   return (
@@ -29,6 +44,7 @@ const SignIn = () => {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
+          {errors.email && <p className='text-red-500'>{errors.email}</p>}
         </div>
         <div className="w-full flex flex-col items-center mt-8">
           <label htmlFor="password" className="text-lg text-black font-roboto">Пароль</label>
@@ -40,6 +56,7 @@ const SignIn = () => {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
+          {errors.password && <p className='text-red-500'>{errors.password}</p>}
         </div>
         <button
           type="submit"

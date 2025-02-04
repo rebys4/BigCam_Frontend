@@ -8,6 +8,8 @@ const ConfirmSignUp = () => {
     const [showResendButton, setShowResendButton] = useState(false);
     const navigate = useNavigate();
 
+    
+
     useEffect(() => {
         if (timeLeft > 0) {
             const timer = setTimeout(() => {
@@ -54,7 +56,7 @@ const ConfirmSignUp = () => {
                     className="w-[394px] h-[81px] px-[168px] py-[29px] left-[150px] top-[341px] absolute bg-[#ea5f5f] rounded-[500px] shadow-2xl justify-center items-center gap-2.5 inline-flex overflow-hidden hover:bg-[#d95353] transition-colors"
                 >
                     <span 
-                        className="text-black text-3xl font-normal font-roboto"
+                        className="text-black text-4xl font-normal font-roboto"
                     />Подтвердить
                 </button>
 

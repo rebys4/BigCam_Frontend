@@ -9,14 +9,14 @@ const NavBar = () => {
         <header className="w-full bg-white shadow-lg">
             <div className="container mx-auto flex justify-between items-center px-6 py-4">
                 {/* Логотип и название приложения */}
-                <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-2">
                     <img
                         src="/assets/exercise.png"
                         alt="Логотип FitnessMonitor"
                         className="w-10 h-10"
                     />
                     <h1 className="text-black text-2xl font-normal font-roboto">
-                        FitnessMonitor
+                        FitnessRemote
                     </h1>
                 </div>
 
