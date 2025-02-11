@@ -23,8 +23,8 @@ const SignIn = () => {
     e.preventDefault();
     if (validate()) {
       console.log('Email:', email, 'Password:', password);
-      navigate('/main');
     }
+    navigate('/main');
   };
 
   return (
