@@ -48,7 +48,7 @@ const SignUp = () => {
         <header className="flex items-center justify-center w-full h-[54px]">
           <img className="w-10 h-10" src="/assets/exercise.png" alt="Exercise Icon" />
           <h1 className="text-3xl font-normal text-center text-black font-roboto ml-2">
-            FitnessMonitor
+            FitnessRemote
           </h1>
         </header>
 

@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from "react";
+import { FaTrash } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
 
 export class Room {
     constructor(name, image) {
@@ -8,10 +10,12 @@ export class Room {
 }
 
 const ListRooms = () => {
+    const [rooms, setRooms] = useState([]);
     const [roomName, setRoomName] = useState("");
     const [roomImage, setRoomImage] = useState("");
-    const [rooms, setRooms] = useState([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isEditMode, setIsEditMode] = useState(false);
+    const navigate = useNavigate();
 
     // Загружаем данные из localStorage при монтировании компонента
     useEffect(() => {
@@ -26,8 +30,14 @@ const ListRooms = () => {
         const updatedRooms = [...rooms, newRoom];
 
         setRooms(updatedRooms);
-        localStorage.setItem("rooms", JSON.stringify(updatedRooms)); // Сохраняем в localStorage
+        localStorage.setItem("rooms", JSON.stringify(updatedRooms));
         setIsModalOpen(false);
+    };
+
+    const deleteRoom = (indexToDelete) => {
+        const updatedRooms = rooms.filter((_, index) => index !== indexToDelete);
+        setRooms(updatedRooms);
+        localStorage.setItem("rooms", JSON.stringify(updatedRooms));
     };
 
     const handleSubmit = (e) => {
@@ -40,18 +50,22 @@ const ListRooms = () => {
     };
 
     return (
-        <section className="w-full max-w-[1800px] h-auto mx-auto p-5 bg-[#fcf6f6]/20 rounded-[25px] shadow-2xl overflow-hidden">
-            <h2 className="text-center text-black text-4xl font-normal font-Roboto mb-8">
-                Выберите зону тренировок
-            </h2>
-
-            <div className="flex justify-end mb-6">
+        <div className="p-4">
+            <div className="flex justify-between items-center mb-4">
                 <button
-                    onClick={() => setIsModalOpen(true)}
-                    className="bg-[#ea5f5f] text-black text-xl font-normal font-Roboto py-3 px-6 rounded-[100px] shadow-md hover:bg-[#d95353] transition-colors"
+                    onClick={() => setIsEditMode(!isEditMode)}
+                    className="bg-gray-300 text-black text-lg font-Roboto py-2 px-6 rounded-[100px] shadow-md hover:bg-gray-400 transition-colors"
                 >
-                    Добавить зал
+                    {isEditMode ? "Отмена редактирования" : "Редактировать"}
                 </button>
+                {isEditMode && (
+                    <button
+                        onClick={() => setIsModalOpen(true)}
+                        className="bg-[#ea5f5f] text-black text-lg font-Roboto py-2 px-6 rounded-[100px] shadow-md hover:bg-[#d95353] transition-colors"
+                    >
+                        Добавить зал
+                    </button>
+                )}
             </div>
 
             {isModalOpen && (
@@ -97,7 +111,16 @@ const ListRooms = () => {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 {rooms.map((room, index) => (
-                    <article key={index} className="bg-white rounded-[25px] shadow-lg overflow-hidden">
+                    <article key={index} className="relative bg-white rounded-[25px] shadow-lg overflow-hidden">
+                        {isEditMode && (
+                            <button
+                                onClick={() => deleteRoom(index)}
+                                className="absolute top-2 right-2 text-red-500 hover:text-red-700 transition-colors"
+                                title="Удалить зал"
+                            >
+                                <FaTrash className="w-6 h-6" />
+                            </button>
+                        )}
                         <img
                             className="w-full h-[200px] object-cover"
                             src={room.image}
@@ -107,14 +130,17 @@ const ListRooms = () => {
                             <h3 className="text-black text-2xl font-normal font-Roboto mb-4">
                                 {room.name}
                             </h3>
-                            <button className="w-full bg-[#ea5f5f] text-black text-xl font-normal font-Roboto py-3 rounded-[100px] shadow-md hover:bg-[#d95353] transition-colors">
+                            <button
+                                onClick={() => navigate("/menuroom")}
+                                className="w-full bg-[#ea5f5f] text-black text-xl font-normal font-Roboto py-3 rounded-[100px] shadow-md hover:bg-[#d95353] transition-colors"
+                            >
                                 Выбрать
                             </button>
                         </div>
                     </article>
                 ))}
             </div>
-        </section>
+        </div>
     );
 };
 
