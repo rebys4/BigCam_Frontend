@@ -40,11 +40,6 @@ const MenuRoom = () => {
           </figure>
         </section>
         <aside className="w-full lg:w-[450px] bg-[#fffbfb]/20 rounded-[25px] shadow-2xl p-6">
-          <header>
-            <h1 className="text-black text-3xl font-normal font-Roboto mb-4">
-              {selectedCamera ? selectedCamera.name : "Выберите камеру"}
-            </h1>
-          </header>
           
           {selectedCamera ? (
             <>

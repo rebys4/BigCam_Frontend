@@ -1,18 +1,20 @@
-import React, { useState, useRef, memo} from "react";
+import React, { useState, useRef, memo, useEffect } from "react";
 import NavBar from "../../components/navbar/NavBar";
 import { MdOutlinePhotoCamera } from "react-icons/md";
+import { useUser } from "../../http/UserContext/UserContext";
 
 const Profile = memo(() => {
 
-    const [avatar, setAvatar] = useState(null);
+    const { userData, updateUser } = useUser();
     const [preview, setPreview] = useState(null);
     const fileInputRef = useRef(null);
+    const [isEditing, setIsEditing] = useState(false);
 
     const handleFileChange = (e) => {
         const file = e.target.files[0];
         if (file) {
-            setAvatar(file);
             setPreview(URL.createObjectURL(file));
+            updateUser({ avatar: URL.createObjectURL(file) });
         }
     };
 
@@ -25,16 +27,21 @@ const Profile = memo(() => {
         }
     }
 
+    useEffect(() => {
+        setFullName(userData.fullName);
+        setEmail(userData.email);
+        setDob(userData.dob);
+    }, [userData]);
 
-    const [isEditing, setIsEditing] = useState(false);
-
-    const [fullName, setFullName] = useState("Иван Иванов");    
+    const [fullName, setFullName] = useState("Иван Иванов");
     const [email, setEmail] = useState("ivan@example.com");
     const [dob, setDob] = useState("2000-01-01");
 
     const handleSubmit = (e) => {
         e.preventDefault();
         
+        updateUser({ fullName, email, dob });
+
         setIsEditing(false);
     };
 
@@ -47,7 +54,7 @@ const Profile = memo(() => {
                     <figure className="relative mt-10">
                         <img
                             className="w-48 h-48 rounded-full object-cover"
-                            src={preview || "/assets/logo account.png"}
+                            src={preview || userData.avatar}
                             alt="Аватар пользователя"
                         />
 

@@ -7,10 +7,12 @@ import GymZoneMap from './components/Rooms/gymZone';
 import MenuRoom from './components/Rooms/MenuRoom';
 import Profile from './pages/Profile/profile';
 import RemotePage from "./pages/RemotePage/RemotePage";
+import { UserProvider } from './http/UserContext/UserContext';
 
 
 function App() {
   return (
+  <UserProvider>
     <Router>
       <Routes>
         <Route path="/" element={<SignIn />} />
@@ -24,7 +26,7 @@ function App() {
         <Route path='/remotePage' element={<RemotePage />} />
       </Routes>
     </Router>
-    
+  </UserProvider>  
   );
 }
 
