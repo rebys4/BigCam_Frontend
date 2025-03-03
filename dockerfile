@@ -1,5 +1,5 @@
 # Используем официальный образ Node.js
-FROM node:18 AS build
+FROM node:21-slim
 
 # Устанавливаем рабочую директорию
 WORKDIR /app
@@ -7,11 +7,11 @@ WORKDIR /app
 # Копируем package.json и package-lock.json (если есть)
 COPY package.json package-lock.json ./
 
-# Устанавливаем зависимости
-RUN npm install --frozen-lockfile
-
 # Копируем все файлы проекта
 COPY . .
+
+# Устанавливаем зависимости
+RUN npm install --frozen-lockfile
 
 # Собираем проект
 RUN npm run build

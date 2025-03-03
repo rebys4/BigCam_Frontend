@@ -1,7 +1,7 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import NavBar from "../navbar/NavBar";
 import GymZoneMap from "../Rooms/gymZone";
-import { Listbox, ListboxButton, ListboxOption, ListboxOptions } from "@headlessui/react";
 
 const qualities = [
   { id: 1, name: "1920х1080" },
@@ -11,58 +11,88 @@ const qualities = [
 
 const MenuRoom = () => {
   const [selectedQuality, setSelectedQuality] = useState(qualities[0]);
+  const [selectedCamera, setSelectedCamera] = useState(null);
+  const navigate = useNavigate();
+
+  // Обработчик выбора камеры
+  const handleCameraSelect = (cameraInfo) => {
+    setSelectedCamera(cameraInfo);
+  };
+
+  // Переход на страницу трансляции
+  const goToRemotePage = () => {
+    if (selectedCamera && !selectedCamera.occupied) {
+      // Можно передать id камеры через state или параметры URL
+      navigate("/remotePage", { state: { cameraId: selectedCamera.id } });
+    }
+  };
 
   return (
     <main className="min-h-screen bg-gray-100 flex flex-col">
       <NavBar />
       <div className="flex flex-col lg:flex-row flex-grow m-4 gap-4">
         <section className="flex-grow bg-white rounded-[25px] shadow-xl p-4">
+          <figcaption className="mt-4 text-center text-black text-2xl">
+            Схема фитнес-зала
+          </figcaption>
           <figure className="w-full">
-            <GymZoneMap />
-            <figcaption className="mt-4 text-center text-black text-2xl">
-              Схема зоны
-            </figcaption>
+            <GymZoneMap onCameraSelect={handleCameraSelect} />
           </figure>
         </section>
         <aside className="w-full lg:w-[450px] bg-[#fffbfb]/20 rounded-[25px] shadow-2xl p-6">
           <header>
             <h1 className="text-black text-3xl font-normal font-Roboto mb-4">
-              Настройка камеры
+              {selectedCamera ? selectedCamera.name : "Выберите камеру"}
             </h1>
           </header>
-          <section className="mb-4">
-            <h2 className="text-black text-xl font-normal font-Roboto mb-2">
-              Качество трансляции:
-            </h2>
-            <Listbox value={selectedQuality} onChange={setSelectedQuality}>
-              <ListboxButton className="w-full bg-[#f8f4f4] rounded-[10px] p-2 text-black text-base font-normal font-Roboto text-left focus:outline-none data-[focus]:outline-2 data-[focus]:-outline-offset-2 data-[focus]:outline-white/25">
-                {selectedQuality.name}
-              </ListboxButton>
-              <ListboxOptions className="mt-1 bg-white shadow-lg max-h-60 py-1 text-base w-[var(--button-width)] rounded-xl border border-white/5 bg-white/5 p-1 [--anchor-gap:var(--spacing-1)] focus:outline-none
-                transition duration-100 ease-in data-[leave]:data-[closed]:opacity-0">
-                {qualities.map((option) => (
-                  <ListboxOption
-                    key={option.id}
-                    value={option}
-                    className={({ active }) =>
-                      `cursor-pointer select-none relative py-2 pl-10 pr-4 ${
-                        active ? "bg-blue-100 text-blue-900" : "text-gray-900"
-                      }`
-                    }
-                  >
-                    {({ selected }) => (
-                      <span className={`block ${selected ? "font-medium" : "font-normal"}`}>
-                        {option.name}
-                      </span>
-                    )}
-                  </ListboxOption>
-                ))}
-              </ListboxOptions>
-            </Listbox>
-          </section>
-          <button className="w-full bg-[#ea5f5f] text-black text-lg font-Roboto py-3 rounded-full shadow-md hover:bg-[#d95353] transition-colors">
-            Подтвердить
-          </button>
+          
+          {selectedCamera ? (
+            <>
+              <section className="mb-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-black text-xl font-normal font-Roboto">
+                    Статус камеры:
+                  </h2>
+                  <div className="flex items-center">
+                    <span
+                      className={`inline-block w-4 h-4 rounded-full mr-2 ${
+                        selectedCamera.occupied ? "bg-red-500" : "bg-green-500"
+                      }`}
+                    ></span>
+                    <span>{selectedCamera.occupied ? "Занята" : "Свободна"}</span>
+                  </div>
+                </div>
+                
+                <div className="bg-gray-100 p-3 rounded-lg">
+                  <p className="text-gray-700">
+                    {selectedCamera.description}
+                  </p>
+                  <p className="text-gray-700 mt-2">
+                    {selectedCamera.occupied 
+                      ? "Камера в данный момент используется другим пользователем. Пожалуйста, попробуйте позже или выберите другую камеру."
+                      : "Камера свободна и готова к использованию. Вы можете начать трансляцию."
+                    } 
+                  </p>
+                </div>
+              </section>
+              
+              <button
+                onClick={goToRemotePage}
+                disabled={selectedCamera.occupied}
+                className={`w-full text-black text-lg font-Roboto py-3 rounded-full shadow-md transition-colors ${
+                  selectedCamera.occupied 
+                    ? "bg-gray-300 cursor-not-allowed" 
+                    : "bg-[#ea5f5f] hover:bg-[#d95353]"
+                }`}
+              >
+                Выбрать камеру
+              </button>
+            </>
+          ) : (
+            <div className="flex items-center justify-center h-64">
+              <p className="text-gray-500 text-xl">Выберите камеру на схеме</p>
+            </div>
+          )}
         </aside>
       </div>
     </main>

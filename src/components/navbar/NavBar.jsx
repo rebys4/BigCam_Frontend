@@ -9,12 +9,11 @@ const NavBar = () => {
     return (
         <header className="w-full bg-white shadow-lg">
             <div className="container mx-auto flex justify-between items-center px-6 py-4">
-                {/* Логотип и название приложения */}
-                <div className="flex items-center space-x-2">
+                <div onClick={() => navigate('/main')} className="flex items-center space-x-2 cursor-pointer">
                     <img
                         src="/assets/exercise.png"
                         alt="Логотип FitnessMonitor"
-                        className="w-10 h-10"
+                        className="w-10 h-10 mt-0.5"
                     />
                     <h1 className="text-black text-2xl font-normal font-roboto">
                         FitnessRemote
@@ -27,7 +26,6 @@ const NavBar = () => {
                     <div>
                         <MenuButton className="relative flex items-center gap-2 rounded-full border-white text-sm focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2">
                             <span className="absolute -inset-1.5" />
-                            <span className="sr-only">Open user menu</span>
                             <img
                                 alt=""
                                 src="/assets/logo account.png"
@@ -44,8 +42,8 @@ const NavBar = () => {
                     >
                         <MenuItem>
                             <a
-                                href="#"
-                                className="block px-4 py-2 text-sm text-gray-700 data-[focus]:bg-gray-100 data-[focus]:outline-none"
+                                onClick={() => navigate('/profile')}
+                                className="block px-4 py-2 text-sm text-gray-700 data-[focus]:bg-gray-100 data-[focus]:outline-none font-roboto"
                             >
                                 Личный кабинет
                             </a>
@@ -53,15 +51,15 @@ const NavBar = () => {
                         <MenuItem>
                             <a
                                 href="#"
-                                className="block px-4 py-2 text-sm text-gray-700 data-[focus]:bg-gray-100 data-[focus]:outline-none"
+                                className="block px-4 py-2 text-sm text-gray-700 data-[focus]:bg-gray-100 data-[focus]:outline-none font-roboto"
                             >
                                 Настройки
                             </a>
                         </MenuItem>
                         <MenuItem>
                             <a
-                                href="#"
-                                className="block px-4 py-2 text-sm text-gray-700 data-[focus]:bg-gray-100 data-[focus]:outline-none"
+                                onClick={() => navigate('/')}
+                                className="block px-4 py-2 text-sm text-gray-700 data-[focus]:bg-gray-100 data-[focus]:outline-none font-roboto"
                             >
                                 Выйти
                             </a>

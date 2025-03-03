@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { FaTrash } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 
 export class Room {
@@ -110,7 +111,16 @@ const ListRooms = () => {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 {rooms.map((room, index) => (
-                    <article key={index} className="bg-white rounded-[25px] shadow-lg overflow-hidden">
+                    <article key={index} className="relative bg-white rounded-[25px] shadow-lg overflow-hidden">
+                        {isEditMode && (
+                            <button
+                                onClick={() => deleteRoom(index)}
+                                className="absolute top-2 right-2 text-red-500 hover:text-red-700 transition-colors"
+                                title="Удалить зал"
+                            >
+                                <FaTrash className="w-6 h-6" />
+                            </button>
+                        )}
                         <img
                             className="w-full h-[200px] object-cover"
                             src={room.image}
@@ -120,7 +130,10 @@ const ListRooms = () => {
                             <h3 className="text-black text-2xl font-normal font-Roboto mb-4">
                                 {room.name}
                             </h3>
-                            <button onClick={() => navigate('/menuroom')} className="w-full bg-[#ea5f5f] text-black text-xl font-normal font-Roboto py-3 rounded-[100px] shadow-md hover:bg-[#d95353] transition-colors">
+                            <button
+                                onClick={() => navigate("/menuroom")}
+                                className="w-full bg-[#ea5f5f] text-black text-xl font-normal font-Roboto py-3 rounded-[100px] shadow-md hover:bg-[#d95353] transition-colors"
+                            >
                                 Выбрать
                             </button>
                         </div>

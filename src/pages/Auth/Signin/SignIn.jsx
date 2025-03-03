@@ -32,14 +32,14 @@ const SignIn = () => {
       <section className="flex flex-col justify-center items-center w-[700px] h-[570px] p-[61px] bg-white rounded-[50px] shadow-2xl">
         <header className="flex items-center justify-center h-[54px]">
           <img className="w-38 h-38" src="/assets/exercise.png" alt="Exercise Icon" />
-          <h1 className="ml-2 text-3xl font-normal text-center text-black font-roboto">FitnessMonitor</h1>
+          <h1 className="ml-2 text-3xl font-normal text-center text-black font-roboto">FitnessRemote</h1>
         </header>
         <div className="w-full flex flex-col items-center mt-8">
           <label htmlFor="email" className="text-lg text-black font-roboto">Электронная почта</label>
           <input
             type="email"
             id="email"
-            className="w-[394px] p-[30px] mt-2 text-xl rounded-[50px] border-none bg-white shadow-lg"
+            className="w-[394px] p-[30px] mt-2 text-xl rounded-[50px] border-none bg-white shadow-md"
             placeholder="trainer@yandex.ru"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -51,7 +51,7 @@ const SignIn = () => {
           <input
             type="password"
             id="password"
-            className="w-[394px] p-[30px] mt-2 mb-8 text-xl rounded-[50px] border-none bg-white shadow-lg"
+            className="w-[394px] p-[30px] mt-2 mb-8 text-xl rounded-[50px] border-none bg-white shadow-md"
             placeholder="*************"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
