@@ -1,14 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-
+import axios from "axios";
 
 const ConfirmSignUp = () => {
-
     const [timeLeft, setTimeLeft] = useState(60);
     const [showResendButton, setShowResendButton] = useState(false);
+    const [code, setCode] = useState('');
+    const [message, setMessage] = useState('');
     const navigate = useNavigate();
-
-    
 
     useEffect(() => {
         if (timeLeft > 0) {
@@ -22,9 +21,28 @@ const ConfirmSignUp = () => {
         }
     }, [timeLeft]);
 
-    const handleResendCode = () => {
-        setTimeLeft(60);
-        setShowResendButton(false);
+    const handleResendCode = async () => {
+        try {
+            await axios.post('http://localhost:3001/resend-code', {});
+            setMessage("Код повторно отправлен")
+            setTimeLeft(60);
+            setShowResendButton(false);
+        } catch (error) {
+            setMessage("Произошла ошибка при отправке кода");
+        }
+    }
+
+    const handleConfirmCode = async () => {
+        try {
+            const response = await axios.post('http://localhost:3001/resend-code', { code });
+            if (response.data.access) {
+                navigate("/main");
+            } else {
+                setMessage("Неверный код");
+            }
+        } catch (error) {
+            setMessage("Произошла ошибка при отправке кода");
+        }
     }
 
     return (
@@ -41,22 +59,25 @@ const ConfirmSignUp = () => {
                 </section>
 
                 <form className="left-[150px] top-[209px] absolute flex-col justify-start items-start gap-2.5 inline-flex">
-                    <div className="w-[394px] px-[30px] py-[27px] bg-white rounded-[500px] shadow-xl justify-start items-center gap-2.5 inline-flex overflow-hidden">
+                    <div className="w-[394px] px-[30px] py-[27px] bg-white rounded-[500px] shadow-md justify-start items-center gap-2.5 inline-flex overflow-hidden">
                         <input
                             type="text"
+                            value={code}
                             placeholder="Код подтверждения"
+                            onChange={(e) => setCode(e.target.value)}
                             className="text-black text-base font-normal font-roboto bg-transparent outline-none w-full"
                         />
                     </div>
+                    {message && <p className="text-red-500">{message}</p>}
                 </form>
 
                 <button
-                    onClick={() => navigate('/main')}
-                    type="submit"
-                    className="w-[394px] h-[81px] px-[168px] py-[29px] left-[150px] top-[341px] absolute bg-[#ea5f5f] rounded-[500px] shadow-2xl justify-center items-center gap-2.5 inline-flex overflow-hidden hover:bg-[#d95353] transition-colors"
+                    onClick={handleConfirmCode}
+                    type="button"
+                    className="w-[394px] h-[81px] px-[168px] py-[29px] left-[150px] top-[341px] absolute bg-[#ea5f5f] rounded-[500px] shadow-md justify-center items-center gap-2.5 inline-flex overflow-hidden text-lg hover:bg-[#d95353] transition-colors"
                 >
                     <span 
-                        className="text-black text-4xl font-normal font-roboto"
+                        className="text-black font-normal"
                     />Подтвердить
                 </button>
 
@@ -65,7 +86,7 @@ const ConfirmSignUp = () => {
                         <button
                             type="submit"
                             onClick={handleResendCode}
-                            className="w-[394px] h-[81px] absolute bg-[#ea5f5f] hover:text-[#c44a4a] rounded-[500px] shadow-2xl justify-center overflow-hidden transition-colors"
+                            className="w-[394px] h-[81px] absolute bg-[#ea5f5f] hover:bg-[#d95353] rounded-[500px] shadow-md justify-center overflow-hidden transition-colors"
                         >
                             Повторно выслать код
                         </button>

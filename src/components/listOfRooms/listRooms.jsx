@@ -16,8 +16,6 @@ const ListRooms = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isEditMode, setIsEditMode] = useState(false);
     const navigate = useNavigate();
-
-    // Загружаем данные из localStorage при монтировании компонента
     useEffect(() => {
         const savedRooms = localStorage.getItem("rooms");
         if (savedRooms) {

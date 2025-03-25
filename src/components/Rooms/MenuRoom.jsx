@@ -1,28 +1,42 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import NavBar from "../navbar/NavBar";
-import GymZoneMap from "../Rooms/gymZone";
-
-const qualities = [
-  { id: 1, name: "1920х1080" },
-  { id: 2, name: "1280х720" },
-  { id: 3, name: "640х480" },
-];
+import ListRoomsWithCameras from "./listRooms";
+import GymService from "../../http/GymService"; 
 
 const MenuRoom = () => {
-  const [selectedQuality, setSelectedQuality] = useState(qualities[0]);
   const [selectedCamera, setSelectedCamera] = useState(null);
+  const [cameraDetails, setCameraDetails] = useState(null);
+  const [loadingDetails, setLoadingDetails] = useState(false);
   const navigate = useNavigate();
 
   // Обработчик выбора камеры
-  const handleCameraSelect = (cameraInfo) => {
+  const handleCameraSelect = async (cameraInfo) => {
     setSelectedCamera(cameraInfo);
+
+    if (cameraInfo && cameraInfo.id) {
+      setLoadingDetails(true);
+      try {
+        const camerasData = await GymService.getCamerasByGymId(1);
+        const foundCamera = camerasData.find((cam) => cam.id === cameraInfo.id);
+
+        if (foundCamera) {
+          setCameraDetails(foundCamera);
+        } else {
+          setCameraDetails({ description: "Описание не найдено." });
+        }
+      } catch (error) {
+        console.error("Ошибка при загрузке данных о камере:", error);
+        setCameraDetails({ description: "Не удалось загрузить описание." });
+      } finally {
+        setLoadingDetails(false);
+      }
+    }
   };
 
   // Переход на страницу трансляции
   const goToRemotePage = () => {
     if (selectedCamera && !selectedCamera.occupied) {
-      // Можно передать id камеры через state или параметры URL
       navigate("/remotePage", { state: { cameraId: selectedCamera.id } });
     }
   };
@@ -32,15 +46,12 @@ const MenuRoom = () => {
       <NavBar />
       <div className="flex flex-col lg:flex-row flex-grow m-4 gap-4">
         <section className="flex-grow bg-white rounded-[25px] shadow-xl p-4">
-          <figcaption className="mt-4 text-center text-black text-2xl">
-            Схема фитнес-зала
-          </figcaption>
           <figure className="w-full">
-            <GymZoneMap onCameraSelect={handleCameraSelect} />
+            <ListRoomsWithCameras onCameraSelect={handleCameraSelect} />
           </figure>
         </section>
+
         <aside className="w-full lg:w-[450px] bg-[#fffbfb]/20 rounded-[25px] shadow-2xl p-6">
-          
           {selectedCamera ? (
             <>
               <section className="mb-6">
@@ -57,20 +68,27 @@ const MenuRoom = () => {
                     <span>{selectedCamera.occupied ? "Занята" : "Свободна"}</span>
                   </div>
                 </div>
-                
+
                 <div className="bg-gray-100 p-3 rounded-lg">
-                  <p className="text-gray-700">
-                    {selectedCamera.description}
-                  </p>
-                  <p className="text-gray-700 mt-2">
-                    {selectedCamera.occupied 
-                      ? "Камера в данный момент используется другим пользователем. Пожалуйста, попробуйте позже или выберите другую камеру."
-                      : "Камера свободна и готова к использованию. Вы можете начать трансляцию."
-                    } 
-                  </p>
+                  {/* Спиннер при загрузке данных о камере */}
+                  {loadingDetails ? (
+                    <div className="flex justify-center items-center py-4">
+                      <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                    </div>
+                  ) : (
+                    <>
+                      <p className="text-gray-700">{cameraDetails?.description || "Описание отсутствует."}</p>
+                      <p className="text-gray-700 mt-2">
+                        {selectedCamera.occupied 
+                          ? "Камера в данный момент используется другим пользователем. Пожалуйста, попробуйте позже или выберите другую камеру."
+                          : "Камера свободна и готова к использованию. Вы можете начать трансляцию."
+                        } 
+                      </p>
+                    </>
+                  )}
                 </div>
               </section>
-              
+
               <button
                 onClick={goToRemotePage}
                 disabled={selectedCamera.occupied}
