@@ -2,6 +2,7 @@ FROM node:alpine as build
 WORKDIR /app
 COPY package.json package-lock.json 
 RUN npm install -g npm@11.2.0
+RUN npm install react-scripts@4.0.3 -g
 COPY . .
 RUN npm run build
 
