@@ -10,13 +10,11 @@ const Profile = memo(() => {
   const fileInputRef = useRef(null);
   const [isEditing, setIsEditing] = useState(false);
 
-  // Если userData может быть undefined, задаём дефолтное значение
   const [fullName, setFullName] = useState("Иван Иванов");
   const [email, setEmail] = useState( "ivan@example.com");
   const [dob, setDob] = useState( "2000-01-01");
 
   useEffect(() => {
-    // Обновляем state только если userData определён
     if (userData) {
       setFullName(fullName);
       setEmail(email);
