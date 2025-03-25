@@ -1,7 +1,7 @@
 FROM node:alpine as build
 WORKDIR /app
 COPY package.json package-lock.json 
-RUN npm install
+RUN npm install -g npm@11.2.0
 COPY . .
 RUN npm run build
 
