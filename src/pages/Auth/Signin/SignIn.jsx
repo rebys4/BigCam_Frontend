@@ -1,10 +1,17 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useUser } from '../../../http/UserContext/UserContext';
 
 const SignIn = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState({});
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+  })
+  const [serverError, setServerError] = useState('');
+  const { login } = useUser();
   const navigate = useNavigate();
 
   const validate = () => {
@@ -19,12 +26,23 @@ const SignIn = () => {
     return Object.keys(newErrors).length === 0;
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (validate()) {
-      console.log('Email:', email, 'Password:', password);
+      const payload = {
+         email:`${formData.email}`,
+         password:`${formData.password}`,
+      };
+
+      const result = await login(payload);
+      if (result && (result.success || result.value)) {
+        console.log("Успешная авторизация", result);
+        navigate('/main');
+      } else {
+        setServerError(result.message || 'Ошибка авторизации');
+        console.log("Ошибка авторизации", result);
+      }
     }
-    navigate('/main');
   };
 
   return (
