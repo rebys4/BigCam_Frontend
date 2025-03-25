@@ -10,15 +10,15 @@ const Profile = memo(() => {
   const fileInputRef = useRef(null);
   const [isEditing, setIsEditing] = useState(false);
 
-  const [fullName, setFullName] = useState("Иван Иванов");
-  const [email, setEmail] = useState( "ivan@example.com");
-  const [dob, setDob] = useState( "2000-01-01");
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState( "");
+  const [dob, setDob] = useState("");
 
   useEffect(() => {
     if (userData) {
-      setFullName(fullName);
-      setEmail(email);
-      setDob(dob);
+      setFullName(userData.fullName);
+      setEmail(userData.email);
+      setDob(userData.dob);
     }
   }, [userData]);
 

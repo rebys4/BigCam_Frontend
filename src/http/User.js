@@ -97,19 +97,22 @@ export class User {
 
 
     getProfile = async () => {
-        await api.get('/profile/...', {}).then(response => {
+        try {
+            const response = await api.get('/api/user/get', {
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${localStorage.getItem('access-token')}`
+                }
+            });
             this.setProfile(response.data.value);
+            this.setAuth(true);
+            this.setUser(response.data.value);
             console.log("Профиль успешно загружен", response.data);
-        }).catch(error => {
-            console.log("Профиль успешно загружен", error.data);
+        } catch (error) {
+            console.log("Ошибка при загрузке профиля", error.response ? error.response.data : error);
             this.setProfile({});
             this.setAuth(false);
-        });
-
-        await api.get('/auth/info', {}).then(response => {
-            this.setAdmin(response.data === 'Admin')
-            console.log('Информация о профиле получена', response.data)
-        }).catch(err => console.log('Ошибка при получении информации о профиле', err.data))
+        }
     }
 
 

@@ -3,8 +3,9 @@ import NavBar from "../../components/navbar/NavBar";
 import { FaArrowUp, FaArrowDown, FaArrowLeft, FaArrowRight, FaPlus, FaMinus, FaHome } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import Hls from 'hls.js'; 
+import { observer } from "mobx-react-lite";
 
-const RemotePage = () => {
+const RemotePage = observer(() => {
   const remoteVideoRef = useRef(null);
   const [connected, setConnected] = useState(false);
   const [controlsVisible, setControlsVisible] = useState(true);
@@ -281,6 +282,6 @@ const RemotePage = () => {
       </div>
     </div>
   );
-};
+});
 
 export default RemotePage;

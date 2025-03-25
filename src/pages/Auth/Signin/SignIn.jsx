@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../../../http/UserContext/UserContext';
+import { observer } from 'mobx-react-lite';
 
-const SignIn = () => {
+const SignIn = observer(() => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState({});
@@ -92,6 +93,6 @@ const SignIn = () => {
       </section>
     </main>
   );
-};
+});
 
 export default SignIn;
