@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../../../http/UserContext/UserContext';
+import { observer } from 'mobx-react-lite';
 
-const SignUp = () => {
+const SignUp = observer(() => {
   const navigate = useNavigate();
   const { register } = useUser();
   
@@ -175,6 +176,6 @@ const SignUp = () => {
       </section>
     </main>
   );
-};
+});
 
 export default SignUp;
