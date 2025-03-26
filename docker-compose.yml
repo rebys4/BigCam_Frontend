@@ -5,7 +5,7 @@ services:
 
   frontend:
     build: 
-      context: ../FitnessMonitor_Frontend
+      context: ./FitnessMonitor_Frontend
     networks:
       - dev
 
