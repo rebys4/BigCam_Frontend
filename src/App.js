@@ -3,7 +3,6 @@ import SignUp from './pages/Auth/SignUp/SignUp';
 import ConfirmSignUp from './pages/Auth/SignUp/ConfirmSignUp'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Main from './pages/Main/Main';
-import GymZoneMap from './components/Rooms/listRooms';
 import MenuRoom from './components/Rooms/MenuRoom';
 import Profile from './pages/Profile/profile';
 import RemotePage from "./pages/RemotePage/RemotePage";
