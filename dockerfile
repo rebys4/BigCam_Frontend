@@ -1,6 +1,6 @@
-FROM node:alpine as build
+FROM node:lts-alpine as build
 WORKDIR /app
-COPY package.json package-lock.json ./
+COPY package*.json ./
 RUN npm install -g npm@11.2.0 && npm install
 COPY . .
 RUN npm run build
