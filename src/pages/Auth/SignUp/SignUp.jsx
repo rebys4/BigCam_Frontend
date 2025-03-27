@@ -49,7 +49,6 @@ const SignUp = observer(() => {
     e.preventDefault();
     setServerError('');
     if (validate()) {
-      // Формируем payload: объединяем фамилию и имя
       const payload = {
         name: `${formData.surname} ${formData.name}`,
         email: formData.email,
@@ -57,13 +56,15 @@ const SignUp = observer(() => {
       };
 
       const result = await register(payload);
-      if (result && (result.success || result.value)) {
-        console.log("Успешная регистрация", result);
-        navigate('/confirm');
-      } else {
-        setServerError(result.message || 'Ошибка регистрации');
-        console.log("Ошибка регистрации", result);
-      }
+      console.log("Успешная регистрация", result);
+      navigate('/confirm');
+      // if (result && (result.success || result.value)) {
+      //   console.log("Успешная регистрация", result);
+      //   navigate('/confirm');
+      // } else {
+      //   setServerError(result.message || 'Ошибка регистрации');
+      //   console.log("Ошибка регистрации", result);
+      // }
     }
   };
 

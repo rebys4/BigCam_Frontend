@@ -28,7 +28,7 @@ const NavBar = () => {
               <span className="absolute -inset-1.5" />
               <img
                 alt="Аватар пользователя"
-                src={userData.avatar}
+                src={userData.avatar  }
                 className="h-9 w-9 rounded-full"
               />
               <p className="text-black text-xl font-normal font-roboto">

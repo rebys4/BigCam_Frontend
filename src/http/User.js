@@ -72,18 +72,14 @@ export class User {
     }
 
 
-    login = async ({ email, password }) => {
+    login = async (formData) => {
         let result = {};
         try {
-            const response = await api.post('/api/user/sign-in',
-                { 
-                    email: email, 
-                    password: password,
-                },
+            const response = await api.post('/api/user/sign-in', formData,
                 { headers: { 'Content-Type': 'application/json' } }
             );
-            localStorage.setItem('access-token', response.data.value.accessToken);
-            localStorage.setItem('email', response.data.value.email);
+            localStorage.setItem('access-token', response.data.access_token);
+            localStorage.setItem('refresh-token', response.data.refresh_token);
             this.setAuth(true);
             this.setUser(response.data.value);
             console.log("Успешный вход", response.data);
@@ -94,7 +90,7 @@ export class User {
             result = error.response ? error.response.data : error;
         }
 
-        
+        await this.getProfile();
         return result;
     }
 
