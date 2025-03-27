@@ -7,10 +7,6 @@ const SignIn = observer(() => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState({});
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-  })
   const [serverError, setServerError] = useState('');
   const { login } = useUser();
   const navigate = useNavigate();
@@ -30,12 +26,7 @@ const SignIn = observer(() => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (validate()) {
-      const payload = {
-         email: formData.email,
-         password: formData.password,
-      };
-
-      const result = await login(payload);
+      const result = await login(email, password);
       if (result && (result.success || result.value)) {
         console.log("Успешная авторизация", result);
         navigate('/main');
