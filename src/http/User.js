@@ -76,7 +76,10 @@ export class User {
         let result = {};
         try {
             const response = await api.post('/api/user/sign-in',
-                { email, password },
+                { 
+                    email: email, 
+                    password: password,
+                },
                 { headers: { 'Content-Type': 'application/json' } }
             );
             localStorage.setItem('access-token', response.data.value.accessToken);
