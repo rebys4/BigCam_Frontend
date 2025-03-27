@@ -31,8 +31,8 @@ const SignIn = observer(() => {
     e.preventDefault();
     if (validate()) {
       const payload = {
-         email:`${formData.email}`,
-         password:`${formData.password}`,
+         email: formData.email,
+         password: formData.password,
       };
 
       const result = await login(payload);

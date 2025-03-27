@@ -72,7 +72,7 @@ export class User {
     }
 
 
-    login = async (email, password) => {
+    login = async ({ email, password }) => {
         let result = {};
         try {
             const response = await api.post('/api/user/sign-in',
