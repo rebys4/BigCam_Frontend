@@ -39,7 +39,6 @@ const SignIn = observer(() => {
       };
 
       const result = await login(payload);
-      console.log(result);
       if (result && (result.access_token || result.refresh_token)) {
         navigate('/main');
       } 
@@ -51,7 +50,7 @@ const SignIn = observer(() => {
       <section className="flex flex-col justify-center items-center w-[700px] h-[570px] p-[61px] bg-white rounded-[50px] shadow-2xl">
         <header className="flex items-center justify-center h-[54px]">
           <img className="w-38 h-38" src="/assets/exercise.png" alt="Exercise Icon" />
-          <h1 className="ml-2 text-3xl font-normal text-center text-black font-roboto">FitnessRemote</h1>
+          <h1 className="ml-2 text-3xl font-normal text-center text-black font-roboto">BigCam</h1>
         </header>
         <div className="w-full flex flex-col items-center mt-8">
           <label htmlFor="email" className="text-lg text-black font-roboto">Электронная почта</label>

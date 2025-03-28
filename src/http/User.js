@@ -81,16 +81,16 @@ export class User {
             localStorage.setItem('access-token', response.data.access_token);
             localStorage.setItem('refresh-token', response.data.refresh_token);
             this.setAuth(true);
-            this.setUser(response.data.value);
+            this.setUser(response.data);
             console.log("Успешный вход", response.data);
-            this.setProfile(response.data.value);
+            this.setProfile(response.data);
             result = response.data;
+            await this.getProfile();
         } catch (error) {
             console.log("Ошибка при входе", error.response ? error.response.data : error);
             result = error.response ? error.response.data : error;
         }
 
-        await this.getProfile();
         return result;
     }
 
@@ -103,10 +103,17 @@ export class User {
                     Authorization: `Bearer ${localStorage.getItem('access-token')}`
                 }
             });
-            this.setProfile(response.data.value);
+
+            const profileData = {
+                name: response.data.name || response.data.fullName || '',
+                email: response.data.email || '',
+            };
+
+            this.setProfile(profileData);
             this.setAuth(true);
-            this.setUser(response.data.value);
+            this.setUser(profileData);
             console.log("Профиль успешно загружен", response.data);
+            localStorage.setItem("userData", JSON.stringify(profileData));
         } catch (error) {
             console.log("Ошибка при загрузке профиля", error.response ? error.response.data : error);
             this.setProfile({});

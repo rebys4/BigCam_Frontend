@@ -3,8 +3,9 @@ import NavBar from "../../components/navbar/NavBar";
 import { MdOutlinePhotoCamera } from "react-icons/md";
 import axios from "axios";
 import { useUser } from "../../http/UserContext/UserContext";
+import { observer } from "mobx-react-lite";
 
-const Profile = memo(() => {
+const Profile = observer(() => {
   const { userData, updateUser } = useUser();
   const [preview, setPreview] = useState(null);
   const fileInputRef = useRef(null);
@@ -58,7 +59,7 @@ const Profile = memo(() => {
             <div className="relative mt-10">
               <img
                   className="w-48 h-48 rounded-full object-cover"
-                  src={preview || ""}
+                  src={preview || "/assets/logo account.png"}
                   alt="Аватар пользователя"
               />
               <button
@@ -95,7 +96,7 @@ const Profile = memo(() => {
                       id="fullName"
                       type="text"
                       placeholder="Введите ФИО"
-                      value={fullName}
+                      value={userData?.fullName}
                       disabled={!isEditing}
                       onChange={(e) => setFullName(e.target.value)}
                       className="w-full p-3 border rounded-full shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"

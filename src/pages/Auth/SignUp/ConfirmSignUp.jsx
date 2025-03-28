@@ -50,7 +50,7 @@ const ConfirmSignUp = () => {
             <section className="w-[698px] h-[570px] relative bg-white rounded-[50px] overflow-hidden">
                 <header className="w-[394px] h-[54px] left-[143px] top-[14px] absolute justify-center items-center inline-flex">
                     <img className="w-38 h-38" src="/assets/exercise.png" alt="Exercise Icon" />
-                    <h1 className="ml-2 text-3xl font-normal text-center text-black font-roboto">FitnessRemote</h1>
+                    <h1 className="ml-2 text-3xl font-normal text-center text-black font-roboto">BigCam</h1>
                 </header>
 
                 <section className="h-[63px] left-[150px] top-[107px] absolute flex-col justify-start items-center gap-[21px] inline-flex">

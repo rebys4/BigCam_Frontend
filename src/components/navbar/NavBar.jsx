@@ -17,7 +17,7 @@ const NavBar = () => {
             className="w-10 h-10 mt-0.5"
           />
           <h1 className="text-black text-2xl font-normal font-roboto">
-            FitnessRemote
+            BigCam
           </h1>
         </div>
 
@@ -28,11 +28,11 @@ const NavBar = () => {
               <span className="absolute -inset-1.5" />
               <img
                 alt="Аватар пользователя"
-                src={userData.avatar  }
+                src={'/assets/logo account.png'}
                 className="h-9 w-9 rounded-full"
               />
               <p className="text-black text-xl font-normal font-roboto">
-                {userData.fullName}
+                {userData?.name || userData?.fullname || 'Пользователь'}
               </p>
             </MenuButton>
           </div>
@@ -43,7 +43,7 @@ const NavBar = () => {
             <MenuItem>
               <a
                 onClick={() => navigate('/profile')}
-                className="block px-4 py-2 text-sm text-gray-700 data-[focus]:bg-gray-100 data-[focus]:outline-none font-Roboto cursor-pointer"
+                className="block px-4 py-2 text-sm text-gray-700 data-[focus]:bg-gray-100 data-[focus]:outline-none font-roboto cursor-pointer"
               >
                 Личный кабинет
               </a>
@@ -51,7 +51,7 @@ const NavBar = () => {
             <MenuItem>
               <a
                 onClick={() => navigate('/')}
-                className="block px-4 py-2 text-sm text-gray-700 data-[focus]:bg-gray-100 data-[focus]:outline-none font-Roboto cursor-pointer"
+                className="block px-4 py-2 text-sm text-gray-700 data-[focus]:bg-gray-100 data-[focus]:outline-none font-roboto cursor-pointer"
               >
                 Выход
               </a>
