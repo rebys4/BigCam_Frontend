@@ -37,6 +37,7 @@ export const UserProvider = observer(({ children }) => {
     ...userStore,
     userData: userStore.profile || {},
     isAuthenticated: userStore.isAuth,
+    createGym: userStore.createGym.bind(userStore),
   };
 
   return (

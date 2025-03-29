@@ -103,7 +103,7 @@ const MenuRoom = () => {
             </>
           ) : (
             <div className="flex items-center justify-center h-64">
-              <p className="text-gray-500 text-xl">Выберите камеру на схеме</p>
+              <p className="text-gray-500 text-xl">Выберите камеру</p>
             </div>
           )}
         </aside>

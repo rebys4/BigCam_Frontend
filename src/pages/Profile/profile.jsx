@@ -6,10 +6,11 @@ import { useUser } from "../../http/UserContext/UserContext";
 import { observer } from "mobx-react-lite";
 
 const Profile = observer(() => {
-  const { userData, changeNameLastName } = useUser();
+  const { userData, updateUser } = useUser();
   const [preview, setPreview] = useState(null);
   const fileInputRef = useRef(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [avatarData, setAvatarData] = useState({avatarUrl: "", avatar_id: ""})
 
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState( "");
@@ -20,6 +21,9 @@ const Profile = observer(() => {
       setFullName(userData.name);
       setEmail(userData.email);
       setDob(userData.dob);
+      if (userData.avatar) {
+        setPreview(userData.avatar);
+      }
     }
   }, [userData]);
 
@@ -35,8 +39,11 @@ const Profile = observer(() => {
 
     try {
       const { data } = await axios.post("http://localhost:8080/upload-avatar", formData);
+      setAvatarData({
+        avatarUrl: data.avatarUrl,
+        avatar_id: data.avatar_id,
+      })
       console.log("Ответ от сервера:", data);
-      // updateUser({ avatar: data.avatarUrl });
     } catch (error) {
       console.error("Ошибка загрузки файла:", error);
     }
@@ -46,7 +53,13 @@ const Profile = observer(() => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    changeNameLastName(fullName);
+    const updatedProfile = {
+      email: email,
+      dob: dob,
+      avatar_id: avatarData.avatar_id,
+    }
+    console.log(email, dob)
+    updateUser(updatedProfile);
     setIsEditing(false);
   };
 
@@ -62,14 +75,16 @@ const Profile = observer(() => {
                   src={preview || "/assets/logo account.png"}
                   alt="Аватар пользователя"
               />
-              <button
+              {isEditing && (
+                <button
                   type="button"
                   onClick={openFileDialog}
                   className="absolute bottom-2 right-2 flex items-center justify-center bg-gray-300 p-2 rounded-full hover:bg-gray-400 transition-colors"
                   aria-label="Изменить аватар"
-              >
-                <MdOutlinePhotoCamera className="w-6 h-6 sm:w-8 sm:h-8 text-gray-700" />
-              </button>
+                >
+                  <MdOutlinePhotoCamera className="w-6 h-6 sm:w-8 sm:h-8 text-gray-700" />
+                </button>
+              )}
               <input
                   type="file"
                   name="file"
@@ -97,7 +112,7 @@ const Profile = observer(() => {
                       type="text"
                       placeholder="Введите ФИО"
                       value={fullName}
-                      disabled={!isEditing}
+                      disabled={true}
                       onChange={(e) => setFullName(e.target.value)}
                       className="w-full p-3 border rounded-full shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
                   />

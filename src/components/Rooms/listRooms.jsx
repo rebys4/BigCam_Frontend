@@ -1,74 +1,61 @@
-import React, { useEffect, useState } from "react";
-import GymService from "../../http/GymService"; // Путь подгони по своей структуре
-import { ChevronDownIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
+import React, { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
+import GymService from "../../http/GymService";
 
 const ListRoomsWithCameras = ({ onCameraSelect }) => {
-  const [zones, setZones] = useState([]);
-  const [openZones, setOpenZones] = useState({});
+  const [cameras, setCameras] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const location = useLocation();
+  const roomData = location.state || {};
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchCameras = async () => {
       setLoading(true);
       try {
-        const data = await GymService.getCamerasById(1);
-        const groupedZones = groupCamerasByZone(data);
-        setZones(groupedZones);
+        const gymId = roomData?.roomId || 1; 
+        console.log(`Загрузка камер для зала ID: ${gymId}`);
+        
+        const camerasData = await GymService.getCamerasById(1);
+        
+        if (Array.isArray(camerasData)) {
+          setCameras(camerasData);
+          console.log('Данные о камерах загружены:', camerasData);
+        } else {
+          console.error('Данные о камерах не являются массивом:', camerasData);
+          setCameras([]);
+        }
       } catch (error) {
         console.error('Ошибка при загрузке данных о камерах:', error);
-        setZones([]);
+        setCameras([]);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchData();
-  }, []);
+    fetchCameras();
+  }, [roomData]);
 
-  const groupCamerasByZone = (data) => {
-    const groupedData = {};
-    data.forEach(camera => {
-      if (!groupedData[camera.zone]) {
-        groupedData[camera.zone] = [];
-      }
-      groupedData[camera.zone].push(camera.name);
-    });
-
-    // Сортировка зон по алфавиту
-    return Object.entries(groupedData)
-      .map(([zoneName, cameras]) => ({
-        name: zoneName,
-        cameras
-      }))
-      .sort((a, b) => a.name.localeCompare(b.name));
-  };
-
-  const toggleZone = (zoneName) => {
-    setOpenZones((prev) => ({
-      ...prev,
-      [zoneName]: !prev[zoneName],
-    }));
-  };
-
-  const handleClick = (camera) => {
+  const handleCameraClick = (camera) => {
     if (onCameraSelect) {
       onCameraSelect(camera);
     }
   };
 
-  const filteredZones = zones.filter(zone =>
-    zone.name.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredCameras = cameras.filter(camera =>
+    camera.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
-    <div className="p-6 bg-gray-100 rounded-xl shadow-md">
-      <h1 className="text-2xl font-bold text-center mb-4">🗺️ Список зон с камерами</h1>
+    <div className="p-4">
+      <h1 className="text-2xl font-bold text-center mb-4">
+        {roomData?.roomName ? `${roomData.roomName} - Камеры` : '🎥 Список камер'}
+      </h1>
 
       {/* Фильтр */}
       <input
         type="text"
-        placeholder="🔎 Поиск по зонам..."
+        placeholder="🔎 Поиск камеры..."
         value={searchTerm}
         onChange={(e) => setSearchTerm(e.target.value)}
         className="w-full p-2 mb-4 border border-gray-300 rounded-md shadow-sm"
@@ -81,43 +68,31 @@ const ListRoomsWithCameras = ({ onCameraSelect }) => {
         </div>
       )}
 
-      {/* Сообщение "Нет данных", если сервер вернул пустой массив */}
-      {!loading && filteredZones.length === 0 && (
-        <p className="text-center text-gray-500">🚫 Нет данных по зонам.</p>
+      {/* Сообщение "Нет данных", если нет камер */}
+      {!loading && filteredCameras.length === 0 && (
+        <p className="text-center text-gray-500">🚫 Нет доступных камер для этого зала.</p>
       )}
 
-      {/* Список зон */}
-      <div className="space-y-4">
-        {filteredZones.map((zone) => (
-          <div key={zone.name} className="bg-white rounded-lg shadow p-4">
-            <div
-              className="flex items-center cursor-pointer"
-              onClick={() => toggleZone(zone.name)}
+      {/* Список камер */}
+      <div className="bg-white rounded-lg shadow-md overflow-hidden">
+        <ul className="divide-y divide-gray-200">
+          {filteredCameras.map((camera, index) => (
+            <li 
+              key={index} 
+              className="py-4 px-6 hover:bg-gray-100 cursor-pointer flex justify-between items-center"
+              onClick={() => handleCameraClick(camera)}
             >
-              {openZones[zone.name] ? (
-                <ChevronDownIcon className="h-6 w-6 text-blue-500" />
-              ) : (
-                <ChevronRightIcon className="h-6 w-6 text-blue-500" />
-              )}
-              <h2 className="text-lg font-semibold ml-2">{zone.name}</h2>
-            </div>
-
-            {/* Список камер */}
-            {openZones[zone.name] && (
-              <div className="ml-8 mt-2 space-y-2">
-                {zone.cameras.map((camera, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center cursor-pointer p-2 rounded-md hover:bg-blue-100 transition"
-                    onClick={() => handleClick(camera)}
-                  >
-                    🎥 <span className="ml-2">{camera}</span>
-                  </div>
-                ))}
+              <div className="flex flex-col">
+                <span className="font-medium text-lg">{camera.name}</span>
+                <span className="text-gray-500 text-sm">{camera.description || "Без описания"}</span>
               </div>
-            )}
-          </div>
-        ))}
+              <div className="flex items-center">
+                <span className={`w-3 h-3 rounded-full ${camera.occupied ? 'bg-red-500' : 'bg-green-500'} mr-2`}></span>
+                <span>{camera.occupied ? 'Занята' : 'Свободна'}</span>
+              </div>
+            </li>
+          ))}
+        </ul>
       </div>
     </div>
   );

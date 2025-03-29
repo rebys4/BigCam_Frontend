@@ -1,4 +1,3 @@
-import axios from "axios";
 import api from "./Api/api";
 import { makeAutoObservable } from "mobx";
 
@@ -115,7 +114,16 @@ export class User {
             const profileData = {
                 name: response.data.name || response.data.fullName || '',
                 email: response.data.email || '',
+                avatar_id: response.data.avatar_id || '',
             };
+
+            if (profileData.avatar_id) {
+                const bucket = 'avatar-bucket';
+                const endPoint = 'storage.yandexcloud.net';
+                profileData.avatar = `https://${bucket}.${endPoint}/avatars/avatar-${profileData.avatar_id}.jpg`;
+            } else {
+                profileData.avatar = '/assets/logo account.png';
+            }
 
             this.setProfile(profileData);
             this.setAuth(true);
@@ -133,17 +141,45 @@ export class User {
         }
     }
 
-
-    changeNameLastName = async (newUserName) => {
+    createGym = async (name) => {
         try {
-            const response = await api.put("/api/user/update", {
-                "Content-type": "application/json",
-                params: { name: newUserName },
+            const response = await api.post("/api/gym/create", {name: name}, {
+                headers: {
+                    "Content-Type": "application/json"
+                }
             });
-            console.log("ФИО успешно изменено", response.data);
-            this.setProfile(response.data.value);
+            console.log("Зал успешно создан", response.data);
+
+            if (response.data && response.data.auth_key) {
+                localStorage.setItem(`gym_auth_key_${response.data.id || Date.now()}`, response.data.auth_key)
+                return {
+                    ...response.data,
+                    saved_auth_key: true
+                }
+            }
+
+            return response.data;
+
         } catch (error) {
-            console.log("Ошибка при изменении ФИО", error);
+            console.log("Ошибка при создании зала:", error.response?.data || error.message);
+        }
+    }
+
+
+    updateUser = async (formData) => {
+        try {
+            await api.put("/api/user/update", formData, {
+                headers: {
+                    "Content-type": "application/json",
+                    "Authorization": `Bearer ${localStorage.getItem('access-token')}`
+                }
+            });
+            const updatedProfile = { ...this.profile, ...formData}
+            console.log("Новые данные пользователя загружены!", updatedProfile);
+            this.setProfile(updatedProfile);
+            localStorage.setItem("userData", JSON.stringify(updatedProfile));
+        } catch (error) {
+            console.log("Ошибка при загрузке новых данных", error);
         }
     }
 

@@ -1,20 +1,23 @@
 import React, { useState, useEffect } from "react";
 import { FaTrash } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
+import { useUser } from "../../http/UserContext/UserContext";
 
 export class Room {
-    constructor(name, image) {
+    constructor(name, image, id, authKey) {
         this.name = name;
         this.image = image;
+        this.id = id;
+        this.authKey = authKey;
     }
 }
 
 const ListRooms = () => {
     const [rooms, setRooms] = useState([]);
     const [roomName, setRoomName] = useState("");
-    const [roomImage, setRoomImage] = useState("");
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isEditMode, setIsEditMode] = useState(false);
+    const { createGym } = useUser();
     const navigate = useNavigate();
     useEffect(() => {
         const savedRooms = localStorage.getItem("rooms");
@@ -23,13 +26,36 @@ const ListRooms = () => {
         }
     }, []);
 
-    const addRoom = (name, image) => {
-        const newRoom = new Room(name, image);
-        const updatedRooms = [...rooms, newRoom];
+    const getRandomImage = () => {
+        const randomIndex = Math.floor(Math.random() * imagesRooms.length);
+        return imagesRooms[randomIndex];
+    }
 
-        setRooms(updatedRooms);
-        localStorage.setItem("rooms", JSON.stringify(updatedRooms));
-        setIsModalOpen(false);
+    const imagesRooms = [
+        "/assets/cardio.png",
+        "/assets/fullbody.png",
+        "/assets/group training.png",
+        "/assets/main.png",
+    ]
+
+    const addRoom = async (name) => {
+        try {
+            const newGymData = await createGym(name);
+            const randomImage = getRandomImage();
+            const newRoom = new Room(
+                name,
+                randomImage,
+                newGymData.id || newGymData._id || Date.now().toString(),
+                newGymData.authKey,
+            );
+            const updatedRooms = [...rooms, newRoom];
+
+            setRooms(updatedRooms);
+            localStorage.setItem("rooms", JSON.stringify(updatedRooms));
+            console.log("Зал успешно создан", newGymData);
+        } catch (error) {
+            console.error("Ошибка при создании зала:", error);
+        }
     };
 
     const deleteRoom = (indexToDelete) => {
@@ -40,10 +66,10 @@ const ListRooms = () => {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        if (roomName && roomImage) {
-            addRoom(roomName, roomImage);
+        if (roomName) {
+            addRoom(roomName);
             setRoomName("");
-            setRoomImage("");
+            setIsModalOpen(false);
         }
     };
 
@@ -78,13 +104,6 @@ const ListRooms = () => {
                                 placeholder="Название зала"
                                 value={roomName}
                                 onChange={(e) => setRoomName(e.target.value)}
-                                className="w-full p-3 border rounded-[10px] text-black text-lg font-Roboto focus:outline-none focus:ring-2 focus:ring-[#ea5f5f]"
-                            />
-                            <input
-                                type="text"
-                                placeholder="Ссылка на изображение"
-                                value={roomImage}
-                                onChange={(e) => setRoomImage(e.target.value)}
                                 className="w-full p-3 border rounded-[10px] text-black text-lg font-Roboto focus:outline-none focus:ring-2 focus:ring-[#ea5f5f]"
                             />
                             <div className="flex justify-end gap-4">
@@ -129,7 +148,14 @@ const ListRooms = () => {
                                 {room.name}
                             </h3>
                             <button
-                                onClick={() => navigate("/menuroom")}
+                                onClick={() => navigate("/menuroom", {
+                                    state: { 
+                                        roomId: room.id,
+                                        roomName: room.name,
+                                        roomAuthKey: room.authKey 
+                                    }
+
+                                })}
                                 className="w-full bg-[#ea5f5f] text-black text-xl font-normal font-Roboto py-3 rounded-[100px] shadow-md hover:bg-[#d95353] transition-colors"
                             >
                                 Выбрать
