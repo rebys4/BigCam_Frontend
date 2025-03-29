@@ -97,6 +97,14 @@ export class User {
 
     getProfile = async () => {
         try {
+            const token = localStorage.getItem('access-token');
+
+            if (!token) {
+                throw new Error("Токен не найден");
+            }
+
+            console.log("Запрос профиля с тоекном:", token.substring(0, 10) + "...");
+
             const response = await api.get('/api/user/get', {
                 headers: {
                     'Content-Type': 'application/json',
@@ -118,6 +126,10 @@ export class User {
             console.log("Ошибка при загрузке профиля", error.response ? error.response.data : error);
             this.setProfile({});
             this.setAuth(false);
+
+            localStorage.removeItem('access-token');
+            localStorage.removeItem('refresh-token');
+            // throw new Error("Ошибка при загрузке профиля");
         }
     }
 

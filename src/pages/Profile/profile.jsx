@@ -1,4 +1,4 @@
-import React, { useState, useRef, memo, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import NavBar from "../../components/navbar/NavBar";
 import { MdOutlinePhotoCamera } from "react-icons/md";
 import axios from "axios";
@@ -6,7 +6,7 @@ import { useUser } from "../../http/UserContext/UserContext";
 import { observer } from "mobx-react-lite";
 
 const Profile = observer(() => {
-  const { userData, updateUser } = useUser();
+  const { userData, changeNameLastName } = useUser();
   const [preview, setPreview] = useState(null);
   const fileInputRef = useRef(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -17,7 +17,7 @@ const Profile = observer(() => {
 
   useEffect(() => {
     if (userData) {
-      setFullName(userData.fullName);
+      setFullName(userData.name);
       setEmail(userData.email);
       setDob(userData.dob);
     }
@@ -36,7 +36,7 @@ const Profile = observer(() => {
     try {
       const { data } = await axios.post("http://localhost:8080/upload-avatar", formData);
       console.log("Ответ от сервера:", data);
-      updateUser({ avatar: data.avatarUrl });
+      // updateUser({ avatar: data.avatarUrl });
     } catch (error) {
       console.error("Ошибка загрузки файла:", error);
     }
@@ -46,7 +46,7 @@ const Profile = observer(() => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    updateUser({ fullName, email, dob });
+    changeNameLastName(fullName);
     setIsEditing(false);
   };
 
@@ -96,7 +96,7 @@ const Profile = observer(() => {
                       id="fullName"
                       type="text"
                       placeholder="Введите ФИО"
-                      value={userData?.fullName}
+                      value={fullName}
                       disabled={!isEditing}
                       onChange={(e) => setFullName(e.target.value)}
                       className="w-full p-3 border rounded-full shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"

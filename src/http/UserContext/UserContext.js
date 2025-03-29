@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect } from 'react';
-import { User } from '../../http/User';
+import { User } from '../User';
 import { observer, useLocalObservable } from "mobx-react-lite";
 
 const UserContext = createContext(null);
@@ -14,20 +14,29 @@ export const UserProvider = observer(({ children }) => {
   const userStore = useLocalObservable(() => new User());
 
   useEffect(() => {
+    const savedUserData = localStorage.getItem('userData');
+    if (savedUserData) {
+      try {
+        const userData = JSON.parse(savedUserData);
+        userStore.setProfile(userData);
+        userStore.setUser(userData);
+      } catch (e) {
+        console.log("Ошибка при восстановлении профиля:", e);
+      }
+    }
+
     const token = localStorage.getItem('access-token');
+    
     if (token) {
       userStore.setAuth(true);
-      userStore.getProfile().catch(err => {
-        console.error("Ошибка при загрузке профиля:", err);
-        userStore.setAuth(false);
-      });
     }
+    
   }, [userStore]);
 
   const enhancedUserStore = {
     ...userStore,
     userData: userStore.profile || {},
-    isAuthenticated: userStore.auth,
+    isAuthenticated: userStore.isAuth,
   };
 
   return (
