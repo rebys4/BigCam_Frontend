@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
 import { useUser } from "../../http/UserContext/UserContext";
@@ -6,6 +6,21 @@ import { useUser } from "../../http/UserContext/UserContext";
 const NavBar = () => {
   const navigate = useNavigate();
   const { userData } = useUser();
+  const [avatarUrl, setAvatarUrl] = useState('/assets/logo account.png');
+
+  useEffect(() => {
+    if (userData && userData.avatar_id) {
+      if (userData.avatar_id.startsWith('http')) {
+        setAvatarUrl(userData.avatar_id);  
+      } else {
+        const bucket = 'avatar-bucket';
+        const endPoint = 'storage.yandexcloud.net';
+        setAvatarUrl(`https://${bucket}.${endPoint}/avatars/avatar-${userData.avatar_id}.jpg`);
+      }
+    } else {
+      setAvatarUrl('/assets/logo account.png');
+    }
+  }, [userData]);
 
   return (
     <header className="w-full bg-white shadow-lg">
@@ -13,7 +28,7 @@ const NavBar = () => {
         <div onClick={() => navigate('/main')} className="flex items-center space-x-2 cursor-pointer">
           <img
             src="/assets/exercise.png"
-            alt="Логотип FitnessMonitor"
+            alt="Логотип BigCam"
             className="w-10 h-10 mt-0.5"
           />
           <h1 className="text-black text-2xl font-normal font-roboto">
@@ -28,8 +43,31 @@ const NavBar = () => {
               <span className="absolute -inset-1.5" />
               <img
                 alt="Аватар пользователя"
-                src={'/assets/logo account.png'}
-                className="h-9 w-9 rounded-full"
+                src={avatarUrl}
+                className="h-9 w-9 rounded-full object-cover"
+                onError={(e) => {
+                  // Если ошибка загрузки, пытаемся опред��лить текущее расширение
+                  const currentSrc = e.target.src;
+                  if (currentSrc.includes('avatar-') && userData.avatar_id) {
+                    const bucket = 'avatar-bucket';
+                    const endPoint = 'storage.yandexcloud.net';
+                    const extensions = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
+                    
+                    // Находим текущее расширение
+                    const currentExt = currentSrc.split('.').pop();
+                    const currentIndex = extensions.indexOf(currentExt);
+                    
+                    // Если можно попробовать следующее расширение
+                    if (currentIndex >= 0 && currentIndex < extensions.length - 1) {
+                      const nextExt = extensions[currentIndex + 1];
+                      e.target.src = `https://${bucket}.${endPoint}/avatars/avatar-${userData.avatar_id}.${nextExt}`;
+                      return;
+                    }
+                  }
+                  
+                  // Если все попытки не удались или это не аватар, показываем дефолтное изображение
+                  e.target.src = '/assets/logo account.png';
+                }}
               />
               <p className="text-black text-xl font-normal font-roboto">
                 {userData?.name || userData?.fullname || 'Пользователь'}

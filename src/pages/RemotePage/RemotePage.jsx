@@ -2,7 +2,8 @@ import React, { useEffect, useRef, useState } from "react";
 import NavBar from "../../components/navbar/NavBar";
 import { FaArrowUp, FaArrowDown, FaArrowLeft, FaArrowRight, FaPlus, FaMinus, FaHome } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
-import Hls from 'hls.js'; 
+import Hls from 'hls.js';
+import GymService from "../../http/GymService";
 import { observer } from "mobx-react-lite";
 
 const RemotePage = observer(() => {
@@ -21,13 +22,11 @@ const RemotePage = observer(() => {
     protocol: 'rtsp' 
   };
 
-  // Функция для инициализации видео потока
   const initVideoStream = () => {
     if (Hls.isSupported()) {
       const hls = new Hls();
       hlsRef.current = hls;
       
-      // Формируем URL потока (пример для HLS)
       const streamUrl = `http://${CAMERA_CONFIG.ip}:${CAMERA_CONFIG.port}/hls/stream.m3u8`;
       
       hls.loadSource(streamUrl);
@@ -37,7 +36,6 @@ const RemotePage = observer(() => {
         setConnected(true);
       });
     } else if (remoteVideoRef.current.canPlayType('application/vnd.apple.mpegurl')) {
-      // Для Safari и других браузеров с нативной поддержкой HLS
       const streamUrl = `http://${CAMERA_CONFIG.ip}/hls/stream.m3u8`;
       remoteVideoRef.current.src = streamUrl;
       remoteVideoRef.current.addEventListener('loadedmetadata', () => {
@@ -46,7 +44,7 @@ const RemotePage = observer(() => {
     }
   };
 
-  // Очистка ресурсов
+
   const cleanupResources = () => {
     if (hlsRef.current) {
       hlsRef.current.destroy();
@@ -71,46 +69,9 @@ const RemotePage = observer(() => {
     }, []);
 
   
-  // Функции управления PTZ-камерой
-  const movePTZ = async (direction, speed = 0.5) => {
-    try {
-      // Здесь должен быть реальный API-запрос к серверу, управляющему камерой
-      console.log(`Движение камеры: ${direction}, скорость: ${speed}`);
-      await fetch('http://89.169.174.232:8080/api/camera/move', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ direction, speed })
-      });
-    } catch (error) {
-      console.error("Ошибка управления камерой:", error);
-    }
-  };
 
-  const zoomPTZ = async (zoomDirection) => {
-    try {
-      console.log(`Зум камеры: ${zoomDirection}`);
-      await fetch('http://89.169.174.232:8080/api/camera/zoom', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ zoom: zoomDirection })
-      });
-    } catch (error) {
-      console.error("Ошибка управления зумом:", error);
-    }
-  };
+  const movePTZ = GymService.moveCamera;
 
-  const resetPosition = async () => {
-    try {
-      console.log("Сброс положения камеры");
-      await fetch('http://89.169.174.232:8080/api/camera/reset', {
-        method: 'POST'
-      });
-    } catch (error) {
-      console.error("Ошибка сброса положения:", error);
-    }
-  };
-
-  // Обработчик beforeunload для окна браузера
   useEffect(() => {
     const handleBeforeUnload = () => {
       cleanupResources();
@@ -138,7 +99,6 @@ const RemotePage = observer(() => {
             className="w-full h-full"
           />
           
-          {/* Управление PTZ-камерой - улучшенный дизайн */}
           {connected && controlsVisible && (
             <div className="absolute bottom-8 right-8 bg-black/40 backdrop-blur-sm p-6 rounded-2xl shadow-xl">
               {/* Контейнер с кнопками со структурированной сеткой */}
@@ -171,14 +131,6 @@ const RemotePage = observer(() => {
                   </button>
                 </div>
                 <div className="flex justify-center items-center">
-                  <button
-                    className="w-14 h-14 rounded-full bg-gray-700 hover:bg-gray-600 flex items-center justify-center text-white shadow-md transform hover:scale-105 transition-all"
-                    onClick={() => resetPosition()}
-                  >
-                    <FaHome size={20} />
-                  </button>
-                </div>
-                <div className="flex justify-center items-center">
                   <button 
                     className="w-14 h-14 rounded-full bg-[#ea5f5f] hover:bg-[#d95353] flex items-center justify-center text-white shadow-md transform hover:scale-105 transition-all"
                     onMouseDown={() => movePTZ('right')}
@@ -204,28 +156,6 @@ const RemotePage = observer(() => {
                   </button>
                 </div>
                 <div className="col-span-1"></div> {/* Пустая ячейка */}
-              </div>
-              
-              {/* Кнопки зума отдельно справа */}
-              <div className="absolute right-[-65px] top-1/2 transform -translate-y-1/2 flex flex-col gap-3">
-                <button 
-                  className="w-12 h-12 rounded-full bg-gray-700 hover:bg-gray-600 flex items-center justify-center text-white shadow-md transform hover:scale-105 transition-all"
-                  onMouseDown={() => zoomPTZ('in')}
-                  onMouseUp={() => zoomPTZ('stop')}
-                  onTouchStart={() => zoomPTZ('in')}
-                  onTouchEnd={() => zoomPTZ('stop')}
-                >
-                  <FaPlus size={20} />
-                </button>
-                <button 
-                  className="w-12 h-12 rounded-full bg-gray-700 hover:bg-gray-600 flex items-center justify-center text-white shadow-md transform hover:scale-105 transition-all"
-                  onMouseDown={() => zoomPTZ('out')}
-                  onMouseUp={() => zoomPTZ('stop')}
-                  onTouchStart={() => zoomPTZ('out')}
-                  onTouchEnd={() => zoomPTZ('stop')}
-                >
-                  <FaMinus size={20} />
-                </button>
               </div>
             </div>
           )}

@@ -29,7 +29,7 @@ app.post("/upload-avatar", async (req, res) => {
     try {
         const fileBuffer = req.files[0].buffer;
         const avatar_id = uuidv4();
-        const fileName = `avatar-${Date.now()}.jpg`;
+        const fileName = `avatar-${avatar_id}.jpeg`;
 
         const uploadResult = await s3.Upload(
             { buffer: fileBuffer, name: fileName },
@@ -41,7 +41,7 @@ app.post("/upload-avatar", async (req, res) => {
         }
 
         res.json({ 
-            avatarUrl: uploadResult.Location || uploadResult.url, 
+            avatarUrl: uploadResult.url, 
             avatar_id: avatar_id,
         });
     } catch (error) {

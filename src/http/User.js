@@ -32,7 +32,7 @@ export class User {
     register = async (formData) => {
         let result = {};
         try {
-            const response = await api.post('/api/user/sign-up', formData, {
+            const response = await api.post('/api/auth/sign-up', formData, {
                 headers: {
                     'Content-Type': 'application/json'
                 },
@@ -59,7 +59,7 @@ export class User {
         if (code) {
             requestData.confirmationCode = code;
         }
-        await api.post('/api/user/check-registration', requestData).then(response => {
+        await api.post('/api/auth/check-registration', requestData).then(response => {
             console.log("Подтверждение регистрации прошла успешно", response.data);
             result = response.data;
         }).catch(error => {
@@ -74,9 +74,13 @@ export class User {
     login = async (formData) => {
         let result = {};
         try {
-            const response = await api.post('/api/user/sign-in', formData,
-                { headers: { 'Content-Type': 'application/json' } }
+            console.log("Данные для входа", formData);
+            const headers = { 'Content-Type': 'application/json' };
+            console.log(headers);
+            const response = await api.post('/api/auth/sign-in', formData,
+                { headers }
             );
+            console.log("response", response);
             localStorage.setItem('access-token', response.data.access_token);
             localStorage.setItem('refresh-token', response.data.refresh_token);
             this.setAuth(true);
@@ -104,10 +108,9 @@ export class User {
 
             console.log("Запрос профиля с тоекном:", token.substring(0, 10) + "...");
 
-            const response = await api.get('/api/user/get', {
+            const response = await api.get('/api/user', {
                 headers: {
                     'Content-Type': 'application/json',
-                    Authorization: `Bearer ${localStorage.getItem('access-token')}`
                 }
             });
 
@@ -115,14 +118,13 @@ export class User {
                 name: response.data.name || response.data.fullName || '',
                 email: response.data.email || '',
                 avatar_id: response.data.avatar_id || '',
+                dob: response.data.dob || null
             };
-
-            if (profileData.avatar_id) {
+            
+            if (profileData.avatar_id && !profileData.avatar_id.startsWith('http')) {
                 const bucket = 'avatar-bucket';
                 const endPoint = 'storage.yandexcloud.net';
-                profileData.avatar = `https://${bucket}.${endPoint}/avatars/avatar-${profileData.avatar_id}.jpg`;
-            } else {
-                profileData.avatar = '/assets/logo account.png';
+                profileData.avatar_id = `https://${bucket}.${endPoint}/avatars/avatar-${profileData.avatar_id}.jpeg`;
             }
 
             this.setProfile(profileData);
@@ -130,6 +132,8 @@ export class User {
             this.setUser(profileData);
             console.log("Профиль успешно загружен", response.data);
             localStorage.setItem("userData", JSON.stringify(profileData));
+
+            return profileData;
         } catch (error) {
             console.log("Ошибка при загрузке профиля", error.response ? error.response.data : error);
             this.setProfile({});
@@ -143,15 +147,16 @@ export class User {
 
     createGym = async (name) => {
         try {
-            const response = await api.post("/api/gym/create", {name: name}, {
+            const response = await api.post("/api/gym", {name: name}, {
                 headers: {
-                    "Content-Type": "application/json"
+                    "Content-Type": "application/json",
+                    'Authorization': `Bearer ${localStorage.getItem('access-token')}`
                 }
             });
             console.log("Зал успешно создан", response.data);
 
             if (response.data && response.data.auth_key) {
-                localStorage.setItem(`gym_auth_key_${response.data.id || Date.now()}`, response.data.auth_key)
+                localStorage.setItem(`gym_auth_key_${Date.now()}`, response.data.auth_key)
                 return {
                     ...response.data,
                     saved_auth_key: true
@@ -168,7 +173,18 @@ export class User {
 
     updateUser = async (formData) => {
         try {
-            await api.put("/api/user/update", formData, {
+            console.log("Данные для обновления профиля", formData);
+            const dataToSend = { ...formData };
+
+            if (dataToSend.avatar_id && dataToSend.avatar_id.startsWith('http')) {
+                const urlParts = dataToSend.avatar_id.split('/');
+                const fileName = urlParts[urlParts.length - 1];
+                const idMatch = fileName.match(/avatar-(.+)\.(jpg|jpeg|png|gif)/);
+                if (idMatch && idMatch[1]) {
+                    dataToSend.avatar_id = idMatch[1];
+                }
+            }
+            await api.put("/api/user", dataToSend, {
                 headers: {
                     "Content-type": "application/json",
                     "Authorization": `Bearer ${localStorage.getItem('access-token')}`
@@ -177,7 +193,9 @@ export class User {
             const updatedProfile = { ...this.profile, ...formData}
             console.log("Новые данные пользователя загружены!", updatedProfile);
             this.setProfile(updatedProfile);
+            this.setUser(updatedProfile);
             localStorage.setItem("userData", JSON.stringify(updatedProfile));
+            return updatedProfile;  
         } catch (error) {
             console.log("Ошибка при загрузке новых данных", error);
         }
