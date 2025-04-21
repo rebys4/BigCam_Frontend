@@ -14,7 +14,7 @@ services:
   server:
     build:
       context: .
-      dockerfile: Dockerfile.server
+      dockerfile: Dockerfile.backend
     image: bigcam-server
     ports:
       - "3000:3000"
