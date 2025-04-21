@@ -5,7 +5,8 @@ export class CameraService {
         try {
             const response = await api.get(`/api/gym/camera/ptz/${gymId}/${cameraId}`, formData, {
                 headers: {
-                    "Content-type": "application/json",    
+                    "Content-type": "application/json", 
+                    "Authorization": `Bearer ${localStorage.getItem('access-token')}`
                 }
             });
             console.log(`Успешное начало трансляции видео с камеры ${cameraId}:`, response.data);
@@ -21,6 +22,7 @@ export class CameraService {
             const response = await api.delete(`/api/gym/camera/ptz/${gymId}/${cameraId}`, {
                 headers: {
                     "Content-type": "application/json",
+                    "Authorization": `Bearer ${localStorage.getItem('access-token')}`
                 }
             });
             console.log(`Ошибка при остановке трансляции видео с камеры ${cameraId}:`, response.data);
@@ -31,13 +33,20 @@ export class CameraService {
         }
     }
 
-    static async moveCamera(gymId, cameraId, direction) {
+    static async moveCamera(pan, tilt, zoom, gymId, cameraId) {
         try {
-            const response = await api.get(`/api/gym/camera/ptz/${gymId}/${cameraId}`, {
-                direction: direction
-            }, {
+            const payload = {
+                velocity: {
+                    pan: pan,
+                    tilt: tilt,
+                    zoom: zoom
+                }, 
+                deadline: 60*60
+            }
+            const response = await api.get(`/api/gym/camera/ptz/${gymId}/${cameraId}`, payload, {
                 headers: {
                     "Content-type": "application/json",
+                    "Authorization": `Bearer ${localStorage.getItem('access-token')}`
                 }
             });
             console.log(`Успешное движение камеры ${cameraId}:`, response.data);

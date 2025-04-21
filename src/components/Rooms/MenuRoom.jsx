@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import NavBar from "../navbar/NavBar";
 import ListRoomsWithCameras from "./listRooms";
 import GymService from "../../http/GymService"; 
@@ -9,6 +9,8 @@ const MenuRoom = () => {
   const [cameraDetails, setCameraDetails] = useState(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+  const roomdata = location.state;
 
   // Обработчик выбора камеры
   const handleCameraSelect = async (cameraInfo) => {
@@ -17,7 +19,7 @@ const MenuRoom = () => {
     if (cameraInfo && cameraInfo.id) {
       setLoadingDetails(true);
       try {
-        const camerasData = await GymService.getCamerasByGymId(1);
+        const camerasData = await GymService.getCamerasById(cameraInfo.id);
         const foundCamera = camerasData.find((cam) => cam.id === cameraInfo.id);
 
         if (foundCamera) {
@@ -37,7 +39,11 @@ const MenuRoom = () => {
   // Переход на страницу трансляции
   const goToRemotePage = () => {
     if (selectedCamera && !selectedCamera.occupied) {
-      navigate("/remotePage", { state: { cameraId: selectedCamera.id } });
+      navigate("/remotePage", { state: { 
+        gym_id: roomdata.id,
+        camera_id: selectedCamera.id,
+        description: cameraDetails?.description || selectedCamera.description
+      }});
     }
   };
 

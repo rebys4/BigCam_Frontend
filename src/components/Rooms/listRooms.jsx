@@ -8,31 +8,30 @@ const ListRoomsWithCameras = ({ onCameraSelect }) => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const location = useLocation();
-  const roomData = location.state || {};
+  const roomdata = location.state;
 
   useEffect(() => {
     const fetchCameras = async () => {
       setLoading(true);
       try {
-        const gymId = roomData?.auth_key;
-        console.log(`Загрузка камер для зала ID: ${gymId}`);
-        
-        // Попытка получить данные с сервера
-        let camerasData;
-        try {
-          camerasData = await GymService.getCamerasById(gymId || "cee0da7c-46c6-48e6-a18a-eedea68b21e1");
-        } catch (error) {
-          console.warn("Не удалось получить камеры с сервера, используем демо-данные:", error);
-        }
+        const gymId = roomdata.id;
+        const response = await GymService.getCamerasById(gymId);
+        const camRaw = response.cameras;
+        const cameraArray = camRaw.map(camera => ({
+          id: camera.camera_id,
+          name: `Камера ${camera.camera_id}`,
+          description: camera.description,  
+        }));
+        setCameras(cameraArray);
       } catch (error) {
-        console.error('Ошибка при загрузке данных о камерах, используем демо-данные:', error);
+        console.error('Ошибка при загрузке данных о камерах', error);
       } finally {
         setLoading(false);
       }
     };
 
     fetchCameras();
-  }, [roomData]);
+  }, [roomdata]);
 
   const handleCameraClick = (camera) => {
     if (onCameraSelect) {
@@ -40,7 +39,6 @@ const ListRoomsWithCameras = ({ onCameraSelect }) => {
     }
   };
 
-  // Фильтрация камер по поисковому запросу
   const filteredCameras = cameras.filter(camera =>
     camera.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -48,7 +46,7 @@ const ListRoomsWithCameras = ({ onCameraSelect }) => {
   return (
     <div className="p-4">
       <h1 className="text-2xl font-bold text-center mb-4">
-        {roomData?.roomName ? `${roomData.roomName} - Камеры` : '🎥 Список камер'}
+        {roomdata.name ? `${roomdata.name} - Камеры` : '🎥 Список камер'}
       </h1>
 
       {/* Фильтр */}

@@ -4,7 +4,8 @@ export class GymService {
     static async getCamerasById(gymId) {
         try {
             const response = await api.get(`/api/gym/camera/${gymId}`, {
-                "Content-type": "application/json"
+                "Content-type": "application/json",
+                "Authorization": `Bearer ${localStorage.getItem('access-token')}`
             });
             console.log(`Камеры для зала ${gymId} получены:`, response.data);
             return response.data;

@@ -1,89 +1,108 @@
 import React, { useEffect, useRef, useState } from "react";
 import NavBar from "../../components/navbar/NavBar";
-import { FaArrowUp, FaArrowDown, FaArrowLeft, FaArrowRight, FaPlus, FaMinus, FaHome } from "react-icons/fa";
-import { useNavigate } from "react-router-dom";
-import Hls from 'hls.js';
+import { FaArrowUp, FaArrowDown, FaArrowLeft, FaArrowRight } from "react-icons/fa";
+import { useLocation, useNavigate } from "react-router-dom";
 import GymService from "../../http/GymService";
 import { observer } from "mobx-react-lite";
+import axios from "axios";
 
 const RemotePage = observer(() => {
+  const location = useLocation();
+  const { gym_id, camera_id, description } = location.state || {};
   const remoteVideoRef = useRef(null);
+  const [remoteSDP, setRemoteSDP] = useState("");
   const [connected, setConnected] = useState(false);
   const [controlsVisible, setControlsVisible] = useState(true);
   const navigate = useNavigate();
-  const hlsRef = useRef(null);
 
-  const CAMERA_CONFIG = {
-    ip: '89.169.174.232',
-    port: '8080',
-    streamPath: '/stream',
-    username: 'admin',
-    password: 'password',
-    protocol: 'rtsp' 
-  };
+  const pcRef = useRef(null);
 
-  const initVideoStream = () => {
-    if (Hls.isSupported()) {
-      const hls = new Hls();
-      hlsRef.current = hls;
-      
-      const streamUrl = `http://${CAMERA_CONFIG.ip}:${CAMERA_CONFIG.port}/hls/stream.m3u8`;
-      
-      hls.loadSource(streamUrl);
-      hls.attachMedia(remoteVideoRef.current);
-      hls.on(Hls.Events.MANIFEST_PARSED, () => {
-        remoteVideoRef.current.play();
-        setConnected(true);
-      });
-    } else if (remoteVideoRef.current.canPlayType('application/vnd.apple.mpegurl')) {
-      const streamUrl = `http://${CAMERA_CONFIG.ip}/hls/stream.m3u8`;
-      remoteVideoRef.current.src = streamUrl;
-      remoteVideoRef.current.addEventListener('loadedmetadata', () => {
-        setConnected(true);
-      });
+  const initWebRTCStream = async () => {
+    const pc = new RTCPeerConnection({
+      iceServers: [
+        {
+          urls: "stun:stun.l.google.com:19302",
+        }
+      ]
+    });
+    pcRef.current = pc;
+    pc.addTransceiver("video", { direction: "recvonly" });
+    pc.addTransceiver("audio", { direction: "recvonly" });
+
+    pc.ontrack = (event) => {
+      remoteVideoRef.current.srcObject = event.streams[0];
+      setConnected(true);
     }
-  };
 
+    pc.onicegatheringstatechange = () => {
+      console.log("ICE gathering state:", pc.iceConnectionState);
+    }
+
+    pc.onicegatheringstatechange = async () => {
+      if (pc.iceGatheringState === "complete") {
+        const { type, sdp } = pc.localDescription;
+        const offerBase64 = btoa(JSON.stringify({ type, sdp }));
+
+        try {
+          const response = await axios.post("http://51.250.107.243:8080/cameras/0/webrtc", {
+            sdp: offerBase64,
+          });
+
+          const { sdp } = response.data.sdp;
+          const remoteDesc = JSON.parse(atob(sdp));
+          await pc.setRemoteDescription(new RTCSessionDescription(remoteDesc));
+          console.log("Remote SDP applied via axios");
+        } catch (error) {
+          console.error("Ошибка при получении SDP:", error);
+        }
+      }
+    }
+
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+  };
 
   const cleanupResources = () => {
-    if (hlsRef.current) {
-      hlsRef.current.destroy();
-      hlsRef.current = null;
-    }
-    
+    pcRef.current?.close();
+    pcRef.current = null;
     if (remoteVideoRef.current) {
       remoteVideoRef.current.pause();
-      remoteVideoRef.current.removeAttribute('src');
-      remoteVideoRef.current.load();
+      remoteVideoRef.current.srcObject = null;
     }
-    
     setConnected(false);
   };
 
   useEffect(() => {
-    initVideoStream();
+    initWebRTCStream();
 
-    return () => {
-      cleanupResources();
-    };
-    }, []);
-
-  
-
-  const movePTZ = GymService.moveCamera;
+    return cleanupResources;
+  }, []);
 
   useEffect(() => {
-    const handleBeforeUnload = () => {
-      cleanupResources();
-    };
-
-    window.addEventListener("beforeunload", handleBeforeUnload);
-    
+    const onUnload = () => cleanupResources();
+    window.addEventListener("beforeunload", onUnload);
     return () => {
-      window.removeEventListener("beforeunload", handleBeforeUnload);
+      window.removeEventListener("beforeunload", onUnload);
       cleanupResources();
     };
   }, []);
+
+  const movePTZVector = (pan, tilt) => {
+    GymService.moveCamera(pan, tilt, 0, gym_id, camera_id);
+  };
+
+  const applyRemoteSDP = async () => {
+    try {
+      const desc = JSON.parse(atob(remoteSDP));
+      if (pcRef.current.signalingState !== "have-local-offer") {
+        return alert("Сначала нужно сгенерировать и установить SDP‑офер!");
+      }
+      await pcRef.current.setRemoteDescription(new RTCSessionDescription(desc));
+    } catch (e) {
+      console.error("Ошибка установки remoteDescription:", e);
+      alert("Неверный SDP или формат Base64");
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col">
@@ -98,111 +117,153 @@ const RemotePage = observer(() => {
             muted={true}
             className="w-full h-full"
           />
-          
-          {connected && controlsVisible && (
+
+          {(
             <div className="absolute bottom-8 right-8 bg-black/40 backdrop-blur-sm p-6 rounded-2xl shadow-xl">
-              {/* Контейнер с кнопками со структурированной сеткой */}
-              <div className="grid grid-cols-3 grid-rows-3 gap-2 w-[180px] h-[180px]">
-                {/* Верхний ряд */}
-                <div className="col-span-1"></div> {/* Пустая ячейка */}
-                <div className="flex justify-center">
-                  <button 
-                    className="w-14 h-14 rounded-full bg-[#ea5f5f] hover:bg-[#d95353] flex items-center justify-center text-white shadow-md transform hover:scale-105 transition-all"
-                    onMouseDown={() => movePTZ('up')}
-                    onMouseUp={() => movePTZ('stop')}
-                    onTouchStart={() => movePTZ('up')}
-                    onTouchEnd={() => movePTZ('stop')}
-                  >
-                    <FaArrowUp size={24} />
-                  </button>
-                </div>
-                <div className="col-span-1"></div> {/* Пустая ячейка */}
-                
-                {/* Средний ряд */}
-                <div className="flex justify-center items-center">
-                  <button 
-                    className="w-14 h-14 rounded-full bg-[#ea5f5f] hover:bg-[#d95353] flex items-center justify-center text-white shadow-md transform hover:scale-105 transition-all"
-                    onMouseDown={() => movePTZ('left')}
-                    onMouseUp={() => movePTZ('stop')}
-                    onTouchStart={() => movePTZ('left')}
-                    onTouchEnd={() => movePTZ('stop')}
-                  >
-                    <FaArrowLeft size={24} />
-                  </button>
-                </div>
-                <div className="flex justify-center items-center">
-                  <button 
-                    className="w-14 h-14 rounded-full bg-[#ea5f5f] hover:bg-[#d95353] flex items-center justify-center text-white shadow-md transform hover:scale-105 transition-all"
-                    onMouseDown={() => movePTZ('right')}
-                    onMouseUp={() => movePTZ('stop')}
-                    onTouchStart={() => movePTZ('right')}
-                    onTouchEnd={() => movePTZ('stop')}
-                  >
-                    <FaArrowRight size={24} />
-                  </button>
-                </div>
-                
-                {/* Нижний ряд */}
-                <div className="col-span-1"></div> {/* Пустая ячейка */}
-                <div className="flex justify-center">
-                  <button 
-                    className="w-14 h-14 rounded-full bg-[#ea5f5f] hover:bg-[#d95353] flex items-center justify-center text-white shadow-md transform hover:scale-105 transition-all"
-                    onMouseDown={() => movePTZ('down')}
-                    onMouseUp={() => movePTZ('stop')}
-                    onTouchStart={() => movePTZ('down')}
-                    onTouchEnd={() => movePTZ('stop')}
-                  >
-                    <FaArrowDown size={24} />
-                  </button>
-                </div>
-                <div className="col-span-1"></div> {/* Пустая ячейка */}
+              <div className="relative w-[180px] h-[180px]">
+                {/* NW */}
+                <button
+                  onMouseDown={() => GymService.moveCamera(-0.5, 0.5, 0, gym_id, camera_id)}
+                  onMouseUp={() => GymService.moveCamera(0, 0, 0, gym_id, camera_id)}
+                  onTouchStart={() => GymService.moveCamera(-0.5, 0.5, 0, gym_id, camera_id)}
+                  onTouchEnd={() => GymService.moveCamera(0, 0, 0, gym_id, camera_id)}
+                  className="absolute top-0 left-0 w-14 h-14 rounded-full bg-[#ea5f5f]
+                   hover:bg-[#d95353] flex items-center justify-center text-white shadow-md transition-all"
+                >
+                  <FaArrowUp size={24} className="transform -rotate-45" />
+                </button>
+
+                {/* N */}
+                <button
+                  onMouseDown={() => GymService.moveCamera(0, 0.5, 0, gym_id, camera_id)}
+                  onMouseUp={() => GymService.moveCamera(0, 0, 0, gym_id, camera_id)}
+                  onTouchStart={() => GymService.moveCamera(0, 0.5, 0, gym_id, camera_id)}
+                  onTouchEnd={() => GymService.moveCamera(0, 0, 0, gym_id, camera_id)}
+                  className="absolute top-0 left-1/2 transform -translate-x-1/2 w-14 h-14 rounded-full bg-[#ea5f5f]
+                   hover:bg-[#d95353] flex items-center justify-center text-white shadow-md transition-all"
+                >
+                  <FaArrowUp size={24} />
+                </button>
+
+                {/* NE */}
+                <button
+                  onMouseDown={() => GymService.moveCamera(0.5, 0.5, 0, gym_id, camera_id)}
+                  onMouseUp={() => GymService.moveCamera(0, 0, 0, gym_id, camera_id)}
+                  onTouchStart={() => GymService.moveCamera(0.5, 0.5, 0, gym_id, camera_id)}
+                  onTouchEnd={() => GymService.moveCamera(0, 0, 0, gym_id, camera_id)}
+                  className="absolute top-0 right-0 w-14 h-14 rounded-full bg-[#ea5f5f]
+                   hover:bg-[#d95353] flex items-center justify-center text-white shadow-md transition-all"
+                >
+                  <FaArrowUp size={24} className="transform rotate-45" />
+                </button>
+
+                {/* W */}
+                <button
+                  onMouseDown={() => GymService.moveCamera(-0.5, 0, 0, gym_id, camera_id)}
+                  onMouseUp={() => GymService.moveCamera(0, 0, 0, gym_id, camera_id)}
+                  onTouchStart={() => GymService.moveCamera(-0.5, 0, 0, gym_id, camera_id)}
+                  onTouchEnd={() => GymService.moveCamera(0, 0, 0, gym_id, camera_id)}
+                  className="absolute top-1/2 left-0 transform -translate-y-1/2 w-14 h-14 rounded-full bg-[#ea5f5f]
+                   hover:bg-[#d95353] flex items-center justify-center text-white shadow-md transition-all"
+                >
+                  <FaArrowLeft size={24} />
+                </button>
+
+                {/* E */}
+                <button
+                  onMouseDown={() => GymService.moveCamera(0.5, 0, 0, gym_id, camera_id)}
+                  onMouseUp={() => GymService.moveCamera(0, 0, 0, gym_id, camera_id)}
+                  onTouchStart={() => GymService.moveCamera(0.5, 0, 0, gym_id, camera_id)}
+                  onTouchEnd={() => GymService.moveCamera(0, 0, 0, gym_id, camera_id)}
+                  className="absolute top-1/2 right-0 transform -translate-y-1/2 w-14 h-14 rounded-full bg-[#ea5f5f]
+                   hover:bg-[#d95353] flex items-center justify-center text-white shadow-md transition-all"
+                >
+                  <FaArrowRight size={24} />
+                </button>
+
+                {/* SW */}
+                <button
+                  onMouseDown={() => GymService.moveCamera(-0.5, -0.5, 0, gym_id, camera_id)}
+                  onMouseUp={() => GymService.moveCamera(0, 0, 0, gym_id, camera_id)}
+                  onTouchStart={() => GymService.moveCamera(-0.5, -0.5, 0, gym_id, camera_id)}
+                  onTouchEnd={() => GymService.moveCamera(0, 0, 0, gym_id, camera_id)}
+                  className="absolute bottom-0 left-0 w-14 h-14 rounded-full bg-[#ea5f5f]
+                   hover:bg-[#d95353] flex items-center justify-center text-white shadow-md transition-all"
+                >
+                  <FaArrowDown size={24} className="transform rotate-45" />
+                </button>
+
+                {/* S */}
+                <button
+                  onMouseDown={() => GymService.moveCamera(0, -0.5, 0, gym_id, camera_id)}
+                  onMouseUp={() => GymService.moveCamera(0, 0, 0, gym_id, camera_id)}
+                  onTouchStart={() => GymService.moveCamera(0, -0.5, 0, gym_id, camera_id)}
+                  onTouchEnd={() => GymService.moveCamera(0, 0, 0, gym_id, camera_id)}
+                  className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-14 h-14 rounded-full bg-[#ea5f5f]
+                   hover:bg-[#d95353] flex items-center justify-center text-white shadow-md transition-all"
+                >
+                  <FaArrowDown size={24} />
+                </button>
+
+                {/* SE */}
+                <button
+                  onMouseDown={() => GymService.moveCamera(0.5, -0.5, 0, gym_id, camera_id)}
+                  onMouseUp={() => GymService.moveCamera(0, 0, 0, gym_id, camera_id)}
+                  onTouchStart={() => GymService.moveCamera(0.5, -0.5, 0, gym_id, camera_id)}
+                  onTouchEnd={() => GymService.moveCamera(0, 0, 0, gym_id, camera_id)}
+                  className="absolute bottom-0 right-0 w-14 h-14 rounded-full bg-[#ea5f5f]
+                   hover:bg-[#d95353] flex items-center justify-center text-white shadow-md transition-all"
+                >
+                  <FaArrowDown size={24} className="transform -rotate-45" />
+                </button>
               </div>
             </div>
           )}
-          
-          {/* Кнопка показать/скрыть элементы управления - с улучшенным стилем */}
-          <button 
+
+          <button
             className="absolute top-4 right-4 bg-gray-800/70 text-white px-4 py-2 rounded-full hover:bg-gray-700 transition-colors flex items-center gap-2"
             onClick={() => setControlsVisible(!controlsVisible)}
           >
             {controlsVisible ? "Скрыть управление" : "Показать управление"}
           </button>
         </div>
-        
-        {/* Боковая панель справа, фиксированной ширины */}
+
         <div className="w-full lg:w-[350px] bg-white p-4">
           <h2 className="text-xl font-bold mb-4 font-Roboto">Информация о камере</h2>
           <div className="space-y-4">
             <div>
               <h3 className="font-bold font-Roboto">Название камеры</h3>
-              <p className="font-Roboto">PTZ-камера #1</p>
+              <p className="font-Roboto">Камера {camera_id}</p>
             </div>
             <div>
-              <h3 className="font-bold font-Roboto">Местоположение</h3>
-              <p className="font-Roboto">Зал 1, Верхний правый угол</p>
+              <h3 className="font-bold font-Roboto">Описание</h3>
+              <p className="font-Roboto">{description}</p>
             </div>
             <div>
               <h3 className="font-bold font-Roboto">Статус</h3>
               <div className="flex items-center">
-                <span className="inline-block w-3 h-3 bg-green-500 rounded-full mr-2"></span>
-                <span className="font-Roboto">Подключено</span>
+                <span
+                  className={`inline-block w-3 h-3 rounded-full mr-2 ${connected ? "bg-green-500" : "bg-red-500"
+                    }`}
+                ></span>
+                <span className="font-Roboto">
+                  {connected ? "Подключено" : "Не подключено"}
+                </span>
               </div>
             </div>
             <div>
               <h3 className="font-bold font-Roboto">Инструкция</h3>
               <ul className="list-disc pl-5 text-sm font-Roboto">
                 <li>Используйте стрелки для поворота камеры</li>
-                <li>Кнопки + и - для приближения/отдаления</li>
-                <li>Кнопка "Home" для возврата в исходное положение</li>
               </ul>
             </div>
           </div>
-          
-          {/* Кнопка для завершения трансляции */}
+
           <button
             onClick={() => {
               cleanupResources();
               navigate("/menuroom");
+              GymService.stopCamera(gym_id, camera_id);
             }}
             className="w-full mt-8 bg-[#ea5f5f] text-black text-lg font-Roboto py-3 rounded-full shadow-md hover:bg-[#d95353] transition-colors"
           >

@@ -38,18 +38,20 @@ const ListRooms = () => {
         "/assets/main.png",
     ]
 
-    const addRoom = async (name) => {
+    const addRoom = async (gymName) => {
         try {
-            const newGymData = await createGym(name);
+            const newGymData = await createGym(gymName);
+            console.log(newGymData);
             const randomImage = getRandomImage();
             const newRoom = new Room(
-                name,
+                gymName,
                 randomImage,
-                newGymData.id || newGymData._id || Date.now().toString(),
-                newGymData.authKey,
+                newGymData.gym_id,
+                newGymData.auth_key,
             );
             const updatedRooms = [...rooms, newRoom];
-
+            
+            console.log(newRoom.id, newRoom.authKey);
             setRooms(updatedRooms);
             localStorage.setItem("rooms", JSON.stringify(updatedRooms));
             console.log("Зал успешно создан", newGymData);
@@ -150,9 +152,9 @@ const ListRooms = () => {
                             <button
                                 onClick={() => navigate("/menuroom", {
                                     state: { 
-                                        roomId: room.id,
-                                        roomName: room.name,
-                                        roomAuthKey: room.authKey 
+                                        id: room.id,
+                                        name: room.name,
+                                        authKey: room.authKey 
                                     }
 
                                 })}

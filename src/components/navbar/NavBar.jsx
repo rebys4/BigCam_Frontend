@@ -46,18 +46,17 @@ const NavBar = () => {
                 src={avatarUrl}
                 className="h-9 w-9 rounded-full object-cover"
                 onError={(e) => {
-                  // Если ошибка загрузки, пытаемся опред��лить текущее расширение
                   const currentSrc = e.target.src;
                   if (currentSrc.includes('avatar-') && userData.avatar_id) {
                     const bucket = 'avatar-bucket';
                     const endPoint = 'storage.yandexcloud.net';
                     const extensions = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
                     
-                    // Находим текущее расширение
+                    
                     const currentExt = currentSrc.split('.').pop();
                     const currentIndex = extensions.indexOf(currentExt);
                     
-                    // Если можно попробовать следующее расширение
+                    
                     if (currentIndex >= 0 && currentIndex < extensions.length - 1) {
                       const nextExt = extensions[currentIndex + 1];
                       e.target.src = `https://${bucket}.${endPoint}/avatars/avatar-${userData.avatar_id}.${nextExt}`;
@@ -65,7 +64,7 @@ const NavBar = () => {
                     }
                   }
                   
-                  // Если все попытки не удались или это не аватар, показываем дефолтное изображение
+                  
                   e.target.src = '/assets/logo account.png';
                 }}
               />

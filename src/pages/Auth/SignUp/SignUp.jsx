@@ -57,7 +57,7 @@ const SignUp = observer(() => {
 
       const result = await register(payload);
       console.log("Успешная регистрация", result);
-      navigate('/confirm');
+      navigate('/main');
       // if (result && (result.success || result.value)) {
       //   console.log("Успешная регистрация", result);
       //   navigate('/confirm');

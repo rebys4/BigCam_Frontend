@@ -51,11 +51,14 @@ const Profile = observer(() => {
       const { data } = await axios.post("http://localhost:8080/upload-avatar", formData);
       console.log("Ответ от сервера:", data);
       setAvatarData({
-        avatarUrl: data.avatarUrl,
-        avatar_id: data.avatarUrl, 
+        avatarUrl: data.avatar_id,
+        avatar_id: data.avatar_id, 
       });
       updateUser({
-        avatar_id: data.avatarUrl
+        name: userData.fullName,
+        email: userData.email,
+        dob: userData.dob,
+        avatar_id: data.avatar_id
       });
     } catch (error) {
       console.error("Ошибка загрузки файла:", error);
@@ -67,6 +70,9 @@ const Profile = observer(() => {
   const handleSubmit = (e) => {
     e.preventDefault();
     const updatedProfile = {
+      name: fullName,
+      email: email,
+      dob: dob,
       avatar_id: avatarData.avatar_id,
     };
 
@@ -127,7 +133,7 @@ const Profile = observer(() => {
                   type="text"
                   placeholder="Введите ФИО"
                   value={fullName}
-                  disabled={true}
+                  disabled={!isEditing}
                   onChange={(e) => setFullName(e.target.value)}
                   className="w-full p-3 border rounded-full shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
                 />
