@@ -41,7 +41,7 @@ export class CameraService {
                     "tilt": tilt,
                     "zoom": zoom
                 }, 
-                "deadline": 60*60
+                "deadline": "1s"
             }
             const response = await api.post(`/api/gym/camera/ptz/${gym_id}/${camera_id}`, payload, {
                 headers: {
