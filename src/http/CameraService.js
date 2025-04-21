@@ -36,12 +36,12 @@ export class CameraService {
     static async moveCamera(pan, tilt, zoom, gym_id, camera_id) {
         try {
             const payload = {
-                velocity: {
-                    pan: pan,
-                    tilt: tilt,
-                    zoom: zoom
+                "velocity": {
+                    "pan": pan,
+                    "tilt": tilt,
+                    "zoom": zoom
                 }, 
-                deadline: 60*60
+                "deadline": 60*60
             }
             const response = await api.post(`/api/gym/camera/ptz/${gym_id}/${camera_id}`, payload, {
                 headers: {
