@@ -40,7 +40,7 @@ COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 # Открываем порт 80
-EXPOSE 80
+EXPOSE 3000
 
 # Точка входа запускает одновременно Node и nginx
 ENTRYPOINT ["/entrypoint.sh"]
