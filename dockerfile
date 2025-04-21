@@ -1,41 +1,46 @@
+# ------------------------
 # 1) Сборка React‑приложения
+# ------------------------
 FROM node:18-alpine AS build
 
 WORKDIR /app
+
 COPY package*.json ./
-RUN npm install
+RUN npm ci
+
 COPY . .
 RUN npm run build
 
 
-# 2) Финальный образ: nginx + Node.js + ваш server.js
-FROM node:18-alpine AS production
+# ------------------------
+# 2) Финальный образ на Debian (Ubuntu‑style)
+# ------------------------
+FROM node:18-bullseye-slim AS production
 
 # Устанавливаем nginx
-RUN apk add --no-cache nginx
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends nginx && \
+    rm -rf /var/lib/apt/lists/*
 
-# Рабочая директория для вашего сервера
+# Создаём директорию для приложения
 WORKDIR /app
 
-# Копируем зависимости сервера и устанавливаем их
+# Копируем production‑зависимости (server.js и его package.json)
 COPY package*.json ./
-RUN npm install --production
+RUN npm ci --only=production
 
-# Копируем серверный скрипт
+# Копируем server.js
 COPY server.js ./
 
-# Копируем собранные статики в папку nginx
+# Копируем собранную статику из предыдущего шага
 COPY --from=build /app/build /usr/share/nginx/html
 
-# Копируем nginx‑конфигурацию (если нужна кастомная)
-# COPY nginx.conf /etc/nginx/nginx.conf
-
-# Копируем наш entrypoint
+# Копируем и делаем исполняемым entrypoint
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 # Открываем порт 80
 EXPOSE 80
 
-# Запускаем сначала server.js, потом nginx
+# Точка входа запускает одновременно Node и nginx
 ENTRYPOINT ["/entrypoint.sh"]
