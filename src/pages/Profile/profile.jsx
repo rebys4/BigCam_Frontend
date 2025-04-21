@@ -19,10 +19,7 @@ const Profile = observer(() => {
 
   const getAvatarUrl = (avatarId) => {
     if (!avatarId) return "/assets/logo account.png";
-
-    const bucket = 'avatar-bucket';
-    const endPoint = 'storage.yandexcloud.net';
-    return `https://${bucket}.${endPoint}/avatars/avatar-${avatarId}.jpeg`;
+    return avatarId;
   };
 
   useEffect(() => {
