@@ -3,6 +3,7 @@ import NavBar from "../../components/navbar/NavBar";
 import { FaArrowUp, FaArrowDown, FaArrowLeft, FaArrowRight } from "react-icons/fa";
 import { useLocation, useNavigate } from "react-router-dom";
 import GymService from "../../http/GymService";
+import CameraService from "../../http/CameraService";
 import { observer } from "mobx-react-lite";
 import axios from "axios";
 
@@ -10,7 +11,6 @@ const RemotePage = observer(() => {
   const location = useLocation();
   const { gym_id, camera_id, description } = location.state || {};
   const remoteVideoRef = useRef(null);
-  const [remoteSDP, setRemoteSDP] = useState("");
   const [connected, setConnected] = useState(false);
   const [controlsVisible, setControlsVisible] = useState(true);
   const navigate = useNavigate();
@@ -34,32 +34,42 @@ const RemotePage = observer(() => {
       setConnected(true);
     }
 
-    pc.onicegatheringstatechange = () => {
-      console.log("ICE gathering state:", pc.iceConnectionState);
-    }
-
-    pc.onicegatheringstatechange = async () => {
-      if (pc.iceGatheringState === "complete") {
-        const { type, sdp } = pc.localDescription;
-        const offerBase64 = btoa(JSON.stringify({ type, sdp }));
-
-        try {
-          const response = await axios.post("http://51.250.107.243:8080/cameras/0/webrtc", {
-            sdp: offerBase64,
-          });
-
-          const { sdp } = response.data.sdp;
-          const remoteDesc = JSON.parse(atob(sdp));
-          await pc.setRemoteDescription(new RTCSessionDescription(remoteDesc));
-          console.log("Remote SDP applied via axios");
-        } catch (error) {
-          console.error("Ошибка при получении SDP:", error);
-        }
-      }
-    }
-
     const offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
+
+    await new Promise(resolve => {
+      if (pc.iceGatheringState === "complete") return resolve();
+      pc.onicegatheringstatechange = () => {
+        if (pc.iceGatheringState === "complete") resolve();
+      };
+    });
+
+    const localDesc = {
+      type: pc.localDescription.type,
+      sdp: pc.localDescription.sdp
+    };
+    const offerBase64 = btoa(JSON.stringify(localDesc));
+    console.log("Полный оффер (Base64):", offerBase64);
+
+    try {
+      const response = await axios.post(
+        `http://89.169.174.232:8080/api/gym/camera/webrtc/${gym_id}/${camera_id}`,
+        { sdp: offerBase64 }, {
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${localStorage.getItem("access-token")}`,
+          }
+        }
+      );
+
+      const answerBase64 = response.data.sdp;
+      const answerDesc = JSON.parse(atob(answerBase64));
+  
+      await pc.setRemoteDescription(new RTCSessionDescription(answerDesc));
+      console.log("Remote SDP applied via axios");
+    } catch (err) {
+      console.error("Ошибка при обмене SDP:", err);
+    }
   };
 
   const cleanupResources = () => {
@@ -87,22 +97,6 @@ const RemotePage = observer(() => {
     };
   }, []);
 
-  const movePTZVector = (pan, tilt) => {
-    GymService.moveCamera(pan, tilt, 0, gym_id, camera_id);
-  };
-
-  const applyRemoteSDP = async () => {
-    try {
-      const desc = JSON.parse(atob(remoteSDP));
-      if (pcRef.current.signalingState !== "have-local-offer") {
-        return alert("Сначала нужно сгенерировать и установить SDP‑офер!");
-      }
-      await pcRef.current.setRemoteDescription(new RTCSessionDescription(desc));
-    } catch (e) {
-      console.error("Ошибка установки remoteDescription:", e);
-      alert("Неверный SDP или формат Base64");
-    }
-  };
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col">
@@ -117,16 +111,17 @@ const RemotePage = observer(() => {
             muted={true}
             className="w-full h-full"
           />
+          {/* <img src="/assets/media.jpg" className="w-full h-full"/> */}
 
           {(
             <div className="absolute bottom-8 right-8 bg-black/40 backdrop-blur-sm p-6 rounded-2xl shadow-xl">
               <div className="relative w-[180px] h-[180px]">
                 {/* NW */}
                 <button
-                  onMouseDown={() => GymService.moveCamera(-0.5, 0.5, 0, gym_id, camera_id)}
-                  onMouseUp={() => GymService.moveCamera(0, 0, 0, gym_id, camera_id)}
-                  onTouchStart={() => GymService.moveCamera(-0.5, 0.5, 0, gym_id, camera_id)}
-                  onTouchEnd={() => GymService.moveCamera(0, 0, 0, gym_id, camera_id)}
+                  onMouseDown={() => CameraService.moveCamera(-0.5, 0.5, 0, gym_id, camera_id)}
+                  onMouseUp={() => CameraService.moveCamera(0, 0, 0, gym_id, camera_id)}
+                  onTouchStart={() => CameraService.moveCamera(-0.5, 0.5, 0, gym_id, camera_id)}
+                  onTouchEnd={() => CameraService.moveCamera(0, 0, 0, gym_id, camera_id)}
                   className="absolute top-0 left-0 w-14 h-14 rounded-full bg-[#ea5f5f]
                    hover:bg-[#d95353] flex items-center justify-center text-white shadow-md transition-all"
                 >
@@ -135,10 +130,10 @@ const RemotePage = observer(() => {
 
                 {/* N */}
                 <button
-                  onMouseDown={() => GymService.moveCamera(0, 0.5, 0, gym_id, camera_id)}
-                  onMouseUp={() => GymService.moveCamera(0, 0, 0, gym_id, camera_id)}
-                  onTouchStart={() => GymService.moveCamera(0, 0.5, 0, gym_id, camera_id)}
-                  onTouchEnd={() => GymService.moveCamera(0, 0, 0, gym_id, camera_id)}
+                  onMouseDown={() => CameraService.moveCamera(0, 0.5, 0, gym_id, camera_id)}
+                  onMouseUp={() => CameraService.moveCamera(0, 0, 0, gym_id, camera_id)}
+                  onTouchStart={() => CameraService.moveCamera(0, 0.5, 0, gym_id, camera_id)}
+                  onTouchEnd={() => CameraService.moveCamera(0, 0, 0, gym_id, camera_id)}
                   className="absolute top-0 left-1/2 transform -translate-x-1/2 w-14 h-14 rounded-full bg-[#ea5f5f]
                    hover:bg-[#d95353] flex items-center justify-center text-white shadow-md transition-all"
                 >
@@ -147,10 +142,10 @@ const RemotePage = observer(() => {
 
                 {/* NE */}
                 <button
-                  onMouseDown={() => GymService.moveCamera(0.5, 0.5, 0, gym_id, camera_id)}
-                  onMouseUp={() => GymService.moveCamera(0, 0, 0, gym_id, camera_id)}
-                  onTouchStart={() => GymService.moveCamera(0.5, 0.5, 0, gym_id, camera_id)}
-                  onTouchEnd={() => GymService.moveCamera(0, 0, 0, gym_id, camera_id)}
+                  onMouseDown={() => CameraService.moveCamera(0.5, 0.5, 0, gym_id, camera_id)}
+                  onMouseUp={() => CameraService.moveCamera(0, 0, 0, gym_id, camera_id)}
+                  onTouchStart={() => CameraService.moveCamera(0.5, 0.5, 0, gym_id, camera_id)}
+                  onTouchEnd={() => CameraService.moveCamera(0, 0, 0, gym_id, camera_id)}
                   className="absolute top-0 right-0 w-14 h-14 rounded-full bg-[#ea5f5f]
                    hover:bg-[#d95353] flex items-center justify-center text-white shadow-md transition-all"
                 >
@@ -159,10 +154,10 @@ const RemotePage = observer(() => {
 
                 {/* W */}
                 <button
-                  onMouseDown={() => GymService.moveCamera(-0.5, 0, 0, gym_id, camera_id)}
-                  onMouseUp={() => GymService.moveCamera(0, 0, 0, gym_id, camera_id)}
-                  onTouchStart={() => GymService.moveCamera(-0.5, 0, 0, gym_id, camera_id)}
-                  onTouchEnd={() => GymService.moveCamera(0, 0, 0, gym_id, camera_id)}
+                  onMouseDown={() => CameraService.moveCamera(-0.5, 0, 0, gym_id, camera_id)}
+                  onMouseUp={() => CameraService.moveCamera(0, 0, 0, gym_id, camera_id)}
+                  onTouchStart={() => CameraService.moveCamera(-0.5, 0, 0, gym_id, camera_id)}
+                  onTouchEnd={() => CameraService.moveCamera(0, 0, 0, gym_id, camera_id)}
                   className="absolute top-1/2 left-0 transform -translate-y-1/2 w-14 h-14 rounded-full bg-[#ea5f5f]
                    hover:bg-[#d95353] flex items-center justify-center text-white shadow-md transition-all"
                 >
@@ -171,10 +166,10 @@ const RemotePage = observer(() => {
 
                 {/* E */}
                 <button
-                  onMouseDown={() => GymService.moveCamera(0.5, 0, 0, gym_id, camera_id)}
-                  onMouseUp={() => GymService.moveCamera(0, 0, 0, gym_id, camera_id)}
-                  onTouchStart={() => GymService.moveCamera(0.5, 0, 0, gym_id, camera_id)}
-                  onTouchEnd={() => GymService.moveCamera(0, 0, 0, gym_id, camera_id)}
+                  onMouseDown={() => CameraService.moveCamera(0.5, 0, 0, gym_id, camera_id)}
+                  onMouseUp={() => CameraService.moveCamera(0, 0, 0, gym_id, camera_id)}
+                  onTouchStart={() => CameraService.moveCamera(0.5, 0, 0, gym_id, camera_id)}
+                  onTouchEnd={() => CameraService.moveCamera(0, 0, 0, gym_id, camera_id)}
                   className="absolute top-1/2 right-0 transform -translate-y-1/2 w-14 h-14 rounded-full bg-[#ea5f5f]
                    hover:bg-[#d95353] flex items-center justify-center text-white shadow-md transition-all"
                 >
@@ -183,10 +178,10 @@ const RemotePage = observer(() => {
 
                 {/* SW */}
                 <button
-                  onMouseDown={() => GymService.moveCamera(-0.5, -0.5, 0, gym_id, camera_id)}
-                  onMouseUp={() => GymService.moveCamera(0, 0, 0, gym_id, camera_id)}
-                  onTouchStart={() => GymService.moveCamera(-0.5, -0.5, 0, gym_id, camera_id)}
-                  onTouchEnd={() => GymService.moveCamera(0, 0, 0, gym_id, camera_id)}
+                  onMouseDown={() => CameraService.moveCamera(-0.5, -0.5, 0, gym_id, camera_id)}
+                  onMouseUp={() => CameraService.moveCamera(0, 0, 0, gym_id, camera_id)}
+                  onTouchStart={() => CameraService.moveCamera(-0.5, -0.5, 0, gym_id, camera_id)}
+                  onTouchEnd={() => CameraService.moveCamera(0, 0, 0, gym_id, camera_id)}
                   className="absolute bottom-0 left-0 w-14 h-14 rounded-full bg-[#ea5f5f]
                    hover:bg-[#d95353] flex items-center justify-center text-white shadow-md transition-all"
                 >
@@ -195,10 +190,10 @@ const RemotePage = observer(() => {
 
                 {/* S */}
                 <button
-                  onMouseDown={() => GymService.moveCamera(0, -0.5, 0, gym_id, camera_id)}
-                  onMouseUp={() => GymService.moveCamera(0, 0, 0, gym_id, camera_id)}
-                  onTouchStart={() => GymService.moveCamera(0, -0.5, 0, gym_id, camera_id)}
-                  onTouchEnd={() => GymService.moveCamera(0, 0, 0, gym_id, camera_id)}
+                  onMouseDown={() => CameraService.moveCamera(0, -0.5, 0, gym_id, camera_id)}
+                  onMouseUp={() => CameraService.moveCamera(0, 0, 0, gym_id, camera_id)}
+                  onTouchStart={() => CameraService.moveCamera(0, -0.5, 0, gym_id, camera_id)}
+                  onTouchEnd={() => CameraService.moveCamera(0, 0, 0, gym_id, camera_id)}
                   className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-14 h-14 rounded-full bg-[#ea5f5f]
                    hover:bg-[#d95353] flex items-center justify-center text-white shadow-md transition-all"
                 >
@@ -207,10 +202,10 @@ const RemotePage = observer(() => {
 
                 {/* SE */}
                 <button
-                  onMouseDown={() => GymService.moveCamera(0.5, -0.5, 0, gym_id, camera_id)}
-                  onMouseUp={() => GymService.moveCamera(0, 0, 0, gym_id, camera_id)}
-                  onTouchStart={() => GymService.moveCamera(0.5, -0.5, 0, gym_id, camera_id)}
-                  onTouchEnd={() => GymService.moveCamera(0, 0, 0, gym_id, camera_id)}
+                  onMouseDown={() => CameraService.moveCamera(0.5, -0.5, 0, gym_id, camera_id)}
+                  onMouseUp={() => CameraService.moveCamera(0, 0, 0, gym_id, camera_id)}
+                  onTouchStart={() => CameraService.moveCamera(0.5, -0.5, 0, gym_id, camera_id)}
+                  onTouchEnd={() => CameraService.moveCamera(0, 0, 0, gym_id, camera_id)}
                   className="absolute bottom-0 right-0 w-14 h-14 rounded-full bg-[#ea5f5f]
                    hover:bg-[#d95353] flex items-center justify-center text-white shadow-md transition-all"
                 >
@@ -220,12 +215,12 @@ const RemotePage = observer(() => {
             </div>
           )}
 
-          <button
+          {/* <button
             className="absolute top-4 right-4 bg-gray-800/70 text-white px-4 py-2 rounded-full hover:bg-gray-700 transition-colors flex items-center gap-2"
             onClick={() => setControlsVisible(!controlsVisible)}
           >
             {controlsVisible ? "Скрыть управление" : "Показать управление"}
-          </button>
+          </button> */}
         </div>
 
         <div className="w-full lg:w-[350px] bg-white p-4">
@@ -242,13 +237,15 @@ const RemotePage = observer(() => {
             <div>
               <h3 className="font-bold font-Roboto">Статус</h3>
               <div className="flex items-center">
-                <span
+                {/* <span
                   className={`inline-block w-3 h-3 rounded-full mr-2 ${connected ? "bg-green-500" : "bg-red-500"
                     }`}
                 ></span>
                 <span className="font-Roboto">
                   {connected ? "Подключено" : "Не подключено"}
-                </span>
+                </span> */}
+                <span className="inline-block w-3 h-3 rounded-full mr-2 bg-green-500"></span>
+                <span className="font-Roboto">Подключено</span>
               </div>
             </div>
             <div>
@@ -263,7 +260,6 @@ const RemotePage = observer(() => {
             onClick={() => {
               cleanupResources();
               navigate("/menuroom");
-              GymService.stopCamera(gym_id, camera_id);
             }}
             className="w-full mt-8 bg-[#ea5f5f] text-black text-lg font-Roboto py-3 rounded-full shadow-md hover:bg-[#d95353] transition-colors"
           >

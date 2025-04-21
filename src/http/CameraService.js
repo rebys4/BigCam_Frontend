@@ -17,7 +17,7 @@ export class CameraService {
         }
     }
 
-    static async stopCameraAction() {
+    static async stopCameraAction(gymId, cameraId) {
         try {
             const response = await api.delete(`/api/gym/camera/ptz/${gymId}/${cameraId}`, {
                 headers: {
@@ -33,7 +33,7 @@ export class CameraService {
         }
     }
 
-    static async moveCamera(pan, tilt, zoom, gymId, cameraId) {
+    static async moveCamera(pan, tilt, zoom, gym_id, camera_id) {
         try {
             const payload = {
                 velocity: {
@@ -43,16 +43,16 @@ export class CameraService {
                 }, 
                 deadline: 60*60
             }
-            const response = await api.get(`/api/gym/camera/ptz/${gymId}/${cameraId}`, payload, {
+            const response = await api.post(`/api/gym/camera/ptz/${gym_id}/${camera_id}`, payload, {
                 headers: {
                     "Content-type": "application/json",
                     "Authorization": `Bearer ${localStorage.getItem('access-token')}`
                 }
             });
-            console.log(`Успешное движение камеры ${cameraId}:`, response.data);
+            console.log(`Успешное движение камеры ${camera_id}:`, response.data);
             return response.data;
         } catch (error) {
-            console.error(`Ошибка при движении камеры ${cameraId}:`, error);
+            console.error(`Ошибка при движении камеры ${camera_id}:`, error);
             return [];
         }
     }

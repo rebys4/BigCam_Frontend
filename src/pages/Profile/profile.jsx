@@ -55,7 +55,7 @@ const Profile = observer(() => {
         avatar_id: data.avatar_id, 
       });
       updateUser({
-        name: userData.fullName,
+        name: fullName,
         email: userData.email,
         dob: userData.dob,
         avatar_id: data.avatar_id
