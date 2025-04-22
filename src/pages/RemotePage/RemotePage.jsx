@@ -26,9 +26,18 @@ const RemotePage = observer(() => {
       pcRef.current = pc;
 
 
-      pc.ontrack = (evt) => {
-          remoteVideoRef.current.srcObject = evt.streams[0];
+      pc.ontrack = (event) => {
+        const stream = event.streams[0];
+        if (remoteVideoRef.current) {
+          console.log("Setting srcObject to", event.streams[0]);
+          remoteVideoRef.current.srcObject = stream;
+          remoteVideoRef.current.play()
+          .then(() => console.log("Video playing"))
+          .catch((err) => console.error("Error playing video:", err));
           setConnected(true);
+        } else {
+          console.warn("remoteVideoRef.current is null!");
+        }
       };
 
 
@@ -108,7 +117,7 @@ const RemotePage = observer(() => {
     <div className="min-h-screen bg-gray-100 flex flex-col">
       <NavBar />
       <div className="flex flex-col lg:flex-row flex-grow mb-6">
-        <div className="flex-grow relative bg-black">
+        <div className="flex-grow relative ">
           <video
             ref={remoteVideoRef}
             autoPlay
