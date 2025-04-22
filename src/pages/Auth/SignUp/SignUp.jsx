@@ -5,7 +5,7 @@ import { observer } from 'mobx-react-lite';
 
 const SignUp = observer(() => {
   const navigate = useNavigate();
-  const { register, updateUser } = useUser();
+  const { register, updateUser, login } = useUser();
 
   const [formData, setFormData] = useState({
     surname: '',
@@ -55,140 +55,130 @@ const SignUp = observer(() => {
         password: formData.password
       };
 
-      const result = await register(payload);
+      const status = await register(payload);
+      console.log(formData.email, formData.password);
+      const result = await login({
+        email: formData.email,
+        password: formData.password
+      });
 
-      console.log("Успешная регистрация", result);
-      navigate('/main');
-      const success =
-        (typeof result === 'object' && result.status === 200)
-        || result === true
-        || result === 'ok';
-      if (success) {
-        const userData = {
-          name: `${formData.surname} ${formData.name}`,
-          email: formData.email,
-          dob: '',
-          avatar_id: ''
-        };
-        updateUser(userData);
-        console.log("Успешная регистрация, userData сохранён в сторе:", userData);
+      console.log(result);
+      if (result && (result.access_token || result.refresh_token)) {
         navigate('/main');
-      } else {
-        const msg = result?.message || 'Ошибка регистрации';
-        setServerError(msg);
-        console.error("Ошибка регистрации:", result);
       }
-    }};
 
-    return (
-      <main className="flex justify-center items-center w-screen h-screen bg-black/20">
-        <section className="flex flex-col justify-center items-center w-full max-w-2xl p-2 bg-white rounded-[50px] shadow-2xl overflow-y-auto">
-          <header className="flex items-center justify-center w-full h-[54px]">
-            <img className="w-10 h-10" src="/assets/exercise.png" alt="Exercise Icon" />
-            <h1 className="text-3xl font-normal text-center text-black font-roboto ml-2">
-              BigCam
-            </h1>
-          </header>
+    }
+  };
 
-          <form onSubmit={handleSubmit} className="w-full">
-            {/* Фамилия */}
-            <div className="w-full flex flex-col mt-3">
-              <label htmlFor="surname" className="text-lg text-black font-roboto text-center">
-                Фамилия
-              </label>
-              <input
-                type="text"
-                id="surname"
-                value={formData.surname}
-                onChange={handleChange}
-                placeholder="Иванов"
-                className="w-96 p-6 text-base rounded-[50px] border-none bg-white shadow-md mx-auto"
-              />
-              {errors.surname && <p className="text-red-500 text-center mt-1">{errors.surname}</p>}
-            </div>
+  return (
+    <main className="flex justify-center items-center w-screen h-screen bg-black/20">
+      <section className="flex flex-col justify-center items-center w-full max-w-2xl p-2 bg-white rounded-[50px] shadow-2xl overflow-y-auto">
+        <header className="flex items-center justify-center w-full h-[54px]">
+          <img className="w-10 h-10" src="/assets/exercise.png" alt="Exercise Icon" />
+          <h1 className="text-3xl font-normal text-center text-black font-roboto ml-2">
+            BigCam
+          </h1>
+        </header>
 
-            {/* Имя */}
-            <div className="w-full flex flex-col mt-3">
-              <label htmlFor="name" className="text-lg text-black font-roboto text-center">
-                Имя
-              </label>
-              <input
-                type="text"
-                id="name"
-                value={formData.name}
-                onChange={handleChange}
-                placeholder="Иван"
-                className="w-96 p-6 text-base rounded-[50px] border-none bg-white shadow-md mx-auto"
-              />
-              {errors.name && <p className="text-red-500 text-center mt-1">{errors.name}</p>}
-            </div>
+        <form onSubmit={handleSubmit} className="w-full">
+          {/* Фамилия */}
+          <div className="w-full flex flex-col mt-3">
+            <label htmlFor="surname" className="text-lg text-black font-roboto text-center">
+              Фамилия
+            </label>
+            <input
+              type="text"
+              id="surname"
+              value={formData.surname}
+              onChange={handleChange}
+              placeholder="Иванов"
+              className="w-96 p-6 text-base rounded-[50px] border-none bg-white shadow-md mx-auto"
+            />
+            {errors.surname && <p className="text-red-500 text-center mt-1">{errors.surname}</p>}
+          </div>
 
-            {/* Электронная почта */}
-            <div className="w-full flex flex-col mt-3">
-              <label htmlFor="email" className="text-lg text-black font-roboto text-center">
-                Электронная почта
-              </label>
-              <input
-                type="email"
-                id="email"
-                value={formData.email}
-                onChange={handleChange}
-                placeholder="trainer@yandex.ru"
-                className="w-96 p-6 text-base rounded-[50px] border-none bg-white shadow-md mx-auto"
-              />
-              {errors.email && <p className="text-red-500 text-center mt-1">{errors.email}</p>}
-            </div>
+          {/* Имя */}
+          <div className="w-full flex flex-col mt-3">
+            <label htmlFor="name" className="text-lg text-black font-roboto text-center">
+              Имя
+            </label>
+            <input
+              type="text"
+              id="name"
+              value={formData.name}
+              onChange={handleChange}
+              placeholder="Иван"
+              className="w-96 p-6 text-base rounded-[50px] border-none bg-white shadow-md mx-auto"
+            />
+            {errors.name && <p className="text-red-500 text-center mt-1">{errors.name}</p>}
+          </div>
 
-            {/* Пароль */}
-            <div className="w-full flex flex-col mt-3">
-              <label htmlFor="password" className="text-lg text-black font-roboto text-center">
-                Пароль
-              </label>
-              <input
-                type="password"
-                id="password"
-                value={formData.password}
-                onChange={handleChange}
-                placeholder="*********"
-                className="w-96 p-6 text-base rounded-[50px] border-none bg-white shadow-md mx-auto"
-              />
-              {errors.password && <p className="text-red-500 text-center mt-1">{errors.password}</p>}
-            </div>
+          {/* Электронная почта */}
+          <div className="w-full flex flex-col mt-3">
+            <label htmlFor="email" className="text-lg text-black font-roboto text-center">
+              Электронная почта
+            </label>
+            <input
+              type="email"
+              id="email"
+              value={formData.email}
+              onChange={handleChange}
+              placeholder="trainer@yandex.ru"
+              className="w-96 p-6 text-base rounded-[50px] border-none bg-white shadow-md mx-auto"
+            />
+            {errors.email && <p className="text-red-500 text-center mt-1">{errors.email}</p>}
+          </div>
 
-            {/* Подтверждение пароля */}
-            <div className="w-full flex flex-col mt-3">
-              <label htmlFor="confirmPassword" className="text-lg text-black font-roboto text-center">
-                Подтверждение пароля
-              </label>
-              <input
-                type="password"
-                id="confirmPassword"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                placeholder="*********"
-                className="w-96 p-6 text-base rounded-[50px] border-none bg-white shadow-md mx-auto"
-              />
-              {errors.confirmPassword && <p className="text-red-500 text-center mt-1">{errors.confirmPassword}</p>}
-            </div>
+          {/* Пароль */}
+          <div className="w-full flex flex-col mt-3">
+            <label htmlFor="password" className="text-lg text-black font-roboto text-center">
+              Пароль
+            </label>
+            <input
+              type="password"
+              id="password"
+              value={formData.password}
+              onChange={handleChange}
+              placeholder="*********"
+              className="w-96 p-6 text-base rounded-[50px] border-none bg-white shadow-md mx-auto"
+            />
+            {errors.password && <p className="text-red-500 text-center mt-1">{errors.password}</p>}
+          </div>
 
-            {serverError && <p className="text-red-500 text-center mt-2">{serverError}</p>}
+          {/* Подтверждение пароля */}
+          <div className="w-full flex flex-col mt-3">
+            <label htmlFor="confirmPassword" className="text-lg text-black font-roboto text-center">
+              Подтверждение пароля
+            </label>
+            <input
+              type="password"
+              id="confirmPassword"
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              placeholder="*********"
+              className="w-96 p-6 text-base rounded-[50px] border-none bg-white shadow-md mx-auto"
+            />
+            {errors.confirmPassword && <p className="text-red-500 text-center mt-1">{errors.confirmPassword}</p>}
+          </div>
 
-            <button
-              type="submit"
-              className="w-96 h-14 mt-8 mb-5 mx-auto flex justify-center items-center hover:bg-[#d95353] transition-colors bg-[#ea5f5f] rounded-[500px] shadow-md text-black text-lg font-roboto"
-            >
-              Зарегистрироваться
-            </button>
-          </form>
+          {serverError && <p className="text-red-500 text-center mt-2">{serverError}</p>}
+
           <button
-            onClick={() => navigate('/')}
-            className="mt-4 text-black text-base font-roboto underline"
+            type="submit"
+            className="w-96 h-14 mt-8 mb-5 mx-auto flex justify-center items-center hover:bg-[#d95353] transition-colors bg-[#ea5f5f] rounded-[500px] shadow-md text-black text-lg font-roboto"
           >
-            Уже есть аккаунт? Войти
+            Зарегистрироваться
           </button>
-        </section>
-      </main>
-    );
-  });
+        </form>
+        <button
+          onClick={() => navigate('/')}
+          className="mt-4 text-black text-base font-roboto underline"
+        >
+          Уже есть аккаунт? Войти
+        </button>
+      </section>
+    </main>
+  );
+});
 
 export default SignUp;

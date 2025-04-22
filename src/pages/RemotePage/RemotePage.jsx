@@ -2,7 +2,6 @@ import React, { useEffect, useRef, useState } from "react";
 import NavBar from "../../components/navbar/NavBar";
 import { FaArrowUp, FaArrowDown, FaArrowLeft, FaArrowRight } from "react-icons/fa";
 import { useLocation, useNavigate } from "react-router-dom";
-import GymService from "../../http/GymService";
 import CameraService from "../../http/CameraService";
 import { observer } from "mobx-react-lite";
 import axios from "axios";
