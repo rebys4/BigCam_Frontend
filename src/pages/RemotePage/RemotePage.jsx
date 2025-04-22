@@ -10,91 +10,98 @@ const RemotePage = observer(() => {
   const location = useLocation();
   const { gym_id, camera_id, description } = location.state || {};
   const remoteVideoRef = useRef(null);
-  const [connected, setConnected] = useState(false);
-  const [controlsVisible, setControlsVisible] = useState(true);
+  const pcRef = useRef(null);
   const navigate = useNavigate();
 
-  const pcRef = useRef(null);
+  const [connected, setConnected] = useState(false);
 
-  const initWebRTCStream = async () => {
-    const pc = new RTCPeerConnection({
-      iceServers: [
-        {
-          urls: "stun:stun.l.google.com:19302",
-        }
-      ]
-    });
-    pcRef.current = pc;
-    pc.addTransceiver("video", { direction: "recvonly" });
-    pc.addTransceiver("audio", { direction: "recvonly" });
+  useEffect(() => {
+    // let isMounted = true;
 
-    pc.ontrack = (event) => {
-      remoteVideoRef.current.srcObject = event.streams[0];
-      setConnected(true);
-    }
+    async function startWebRTC() {
 
-    const offer = await pc.createOffer();
-    await pc.setLocalDescription(offer);
+      const pc = new RTCPeerConnection({
+        iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+      });
+      pcRef.current = pc;
 
-    await new Promise(resolve => {
-      if (pc.iceGatheringState === "complete") return resolve();
-      pc.onicegatheringstatechange = () => {
-        if (pc.iceGatheringState === "complete") resolve();
+
+      pc.ontrack = (evt) => {
+          remoteVideoRef.current.srcObject = evt.streams[0];
+          setConnected(true);
       };
-    });
 
-    const localDesc = {
-      type: pc.localDescription.type,
-      sdp: pc.localDescription.sdp
-    };
-    const offerBase64 = btoa(JSON.stringify(localDesc));
-    console.log("Полный оффер (Base64):", offerBase64);
 
-    try {
-      const response = await axios.post(
-        `http://89.169.174.232:8080/api/gym/camera/webrtc/${gym_id}/${camera_id}`,
-        { sdp: offerBase64 }, {
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${localStorage.getItem("access-token")}`,
+      pc.addTransceiver("video");
+      pc.addTransceiver("audio");
+
+      try {
+
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+
+
+        await new Promise((resolve) => {
+          if (pc.iceGatheringState === "complete") {
+            resolve();
+          } else {
+            const handler = () => {
+              if (pc.iceGatheringState === "complete") {
+                pc.removeEventListener("icegatheringstatechange", handler);
+                resolve();
+              }
+            };
+            pc.addEventListener("icegatheringstatechange", handler);
           }
-        }
-      );
+        });
 
-      const answerBase64 = response.data.sdp;
-      const answerDesc = JSON.parse(atob(answerBase64));
-  
-      await pc.setRemoteDescription(new RTCSessionDescription(answerDesc));
-      console.log("Remote SDP applied via axios");
-    } catch (err) {
-      console.error("Ошибка при обмене SDP:", err);
+
+        const localDesc = pc.localDescription;
+        const offerBase64 = btoa(
+          JSON.stringify({ type: localDesc.type, sdp: localDesc.sdp })
+        );
+
+        const { data } = await axios.post(
+          `http://89.169.174.232:8080/api/gym/camera/webrtc/${gym_id}/${camera_id}`,
+          { sdp: offerBase64 },
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("access-token")}`,
+            },
+          }
+        );
+
+
+        const answerBase64 = data.sdp;
+        const answer = JSON.parse(atob(answerBase64));  
+        await pc.setRemoteDescription(answer);
+        console.log("Remote SDP applied via axios");
+      } catch (err) {
+        console.error("Ошибка WebRTC:", err);
+      }
     }
-  };
 
-  const cleanupResources = () => {
-    pcRef.current?.close();
-    pcRef.current = null;
-    if (remoteVideoRef.current) {
-      remoteVideoRef.current.pause();
-      remoteVideoRef.current.srcObject = null;
-    }
-    setConnected(false);
-  };
+    startWebRTC();
 
-  useEffect(() => {
-    initWebRTCStream();
 
-    return cleanupResources;
-  }, []);
+    // return () => {
+    //   isMounted = false;
+    //   if (pcRef.current) {
+    //     pcRef.current.getTransceivers().forEach((t) => {
+    //       if (t.receiver.track) t.receiver.track.stop();
+    //     });
+    //     pcRef.current.close();
+    //   }
+    //   const vid = remoteVideoRef.current;
+    //   if (vid) {
+    //     vid.pause();
+    //     vid.srcObject = null;
+    //   }
+    //   setConnected(false);
+    // };
+  }, [gym_id, camera_id]);
 
-  useEffect(() => {
-    const onUnload = () => cleanupResources();
-    window.addEventListener("beforeunload", onUnload);
-    return () => {
-      window.removeEventListener("beforeunload", onUnload);
-      cleanupResources();
-    };
-  }, []);
 
 
   return (
@@ -110,7 +117,6 @@ const RemotePage = observer(() => {
             muted={true}
             className="w-full h-full"
           />
-          {/* <img src="/assets/media.jpg" className="w-full h-full"/> */}
 
           {(
             <div className="absolute bottom-8 right-8 bg-black/40 backdrop-blur-sm p-6 rounded-2xl shadow-xl">
@@ -257,7 +263,6 @@ const RemotePage = observer(() => {
 
           <button
             onClick={() => {
-              cleanupResources();
               navigate("/menuroom");
             }}
             className="w-full mt-8 bg-[#ea5f5f] text-black text-lg font-Roboto py-3 rounded-full shadow-md hover:bg-[#d95353] transition-colors"
