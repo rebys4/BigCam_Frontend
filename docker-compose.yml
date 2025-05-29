@@ -1,22 +1,20 @@
-networks:
-  dev:
+version: "3.8"
 
 services:
-
   frontend:
-    build: 
-      context: ../FitnessMonitor_Frontend
-    networks:
-      - dev
-
-  nginx:
-    image: nginx:stable-alpine
+    build:
+      context: .
+      dockerfile: dockerfile.front
+    image: bigcam-frontend
     ports:
       - "8080:80"
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf
     depends_on:
-      - frontend
-    networks:
-      - dev
-    
+      - server
+
+  server:
+    build:
+      context: .
+      dockerfile: dockerfile.backend
+    image: bigcam-server
+    ports:
+      - "3000:3000"

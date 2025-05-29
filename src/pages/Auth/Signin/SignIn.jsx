@@ -4,8 +4,6 @@ import { useUser } from '../../../http/UserContext/UserContext';
 import { observer } from 'mobx-react-lite';
 
 const SignIn = observer(() => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [errors, setErrors] = useState({});
   const [formData, setFormData] = useState({
     email: '',
@@ -17,32 +15,33 @@ const SignIn = observer(() => {
 
   const validate = () => {
     let newErrors = {}
-    if (!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+    if (!formData.email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
       newErrors.email = 'Введите корректный email'
     }
-    if (password.length < 6) {
+    if (formData.password.length < 6) {
       newErrors.password = 'Пароль должен содержать минимум 6 символов';
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   }
 
+  const handleChange = (e) => {
+    const { id, value } = e.target;
+    setFormData(prev => ({ ...prev, [id]: value }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (validate()) {
       const payload = {
-         email:`${formData.email}`,
-         password:`${formData.password}`,
+        email: formData.email,
+        password: formData.password
       };
 
       const result = await login(payload);
-      if (result && (result.success || result.value)) {
-        console.log("Успешная авторизация", result);
+      if (result && (result.access_token || result.refresh_token)) {
         navigate('/main');
-      } else {
-        setServerError(result.message || 'Ошибка авторизации');
-        console.log("Ошибка авторизации", result);
-      }
+      } 
     }
   };
 
@@ -51,7 +50,7 @@ const SignIn = observer(() => {
       <section className="flex flex-col justify-center items-center w-[700px] h-[570px] p-[61px] bg-white rounded-[50px] shadow-2xl">
         <header className="flex items-center justify-center h-[54px]">
           <img className="w-38 h-38" src="/assets/exercise.png" alt="Exercise Icon" />
-          <h1 className="ml-2 text-3xl font-normal text-center text-black font-roboto">FitnessRemote</h1>
+          <h1 className="ml-2 text-3xl font-normal text-center text-black font-roboto">BigCam</h1>
         </header>
         <div className="w-full flex flex-col items-center mt-8">
           <label htmlFor="email" className="text-lg text-black font-roboto">Электронная почта</label>
@@ -60,8 +59,8 @@ const SignIn = observer(() => {
             id="email"
             className="w-[394px] p-[30px] mt-2 text-xl rounded-[50px] border-none bg-white shadow-md"
             placeholder="trainer@yandex.ru"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            value={formData.email}
+            onChange={handleChange}
           />
           {errors.email && <p className='text-red-500'>{errors.email}</p>}
         </div>
@@ -72,8 +71,8 @@ const SignIn = observer(() => {
             id="password"
             className="w-[394px] p-[30px] mt-2 mb-8 text-xl rounded-[50px] border-none bg-white shadow-md"
             placeholder="*************"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            value={formData.password}
+            onChange={handleChange}
           />
           {errors.password && <p className='text-red-500'>{errors.password}</p>}
         </div>

@@ -5,8 +5,8 @@ import { observer } from 'mobx-react-lite';
 
 const SignUp = observer(() => {
   const navigate = useNavigate();
-  const { register } = useUser();
-  
+  const { register, updateUser, login } = useUser();
+
   const [formData, setFormData] = useState({
     surname: '',
     name: '',
@@ -49,21 +49,24 @@ const SignUp = observer(() => {
     e.preventDefault();
     setServerError('');
     if (validate()) {
-      // Формируем payload: объединяем фамилию и имя
       const payload = {
         name: `${formData.surname} ${formData.name}`,
         email: formData.email,
         password: formData.password
       };
 
-      const result = await register(payload);
-      if (result && (result.success || result.value)) {
-        console.log("Успешная регистрация", result);
-        navigate('/confirm');
-      } else {
-        setServerError(result.message || 'Ошибка регистрации');
-        console.log("Ошибка регистрации", result);
+      const status = await register(payload);
+      console.log(formData.email, formData.password);
+      const result = await login({
+        email: formData.email,
+        password: formData.password
+      });
+
+      console.log(result);
+      if (result && (result.access_token || result.refresh_token)) {
+        navigate('/main');
       }
+
     }
   };
 
@@ -73,7 +76,7 @@ const SignUp = observer(() => {
         <header className="flex items-center justify-center w-full h-[54px]">
           <img className="w-10 h-10" src="/assets/exercise.png" alt="Exercise Icon" />
           <h1 className="text-3xl font-normal text-center text-black font-roboto ml-2">
-            FitnessRemote
+            BigCam
           </h1>
         </header>
 

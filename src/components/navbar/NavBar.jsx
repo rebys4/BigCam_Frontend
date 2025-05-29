@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
 import { useUser } from "../../http/UserContext/UserContext";
@@ -6,6 +6,21 @@ import { useUser } from "../../http/UserContext/UserContext";
 const NavBar = () => {
   const navigate = useNavigate();
   const { userData } = useUser();
+  const [avatarUrl, setAvatarUrl] = useState('/assets/logo account.png');
+
+  useEffect(() => {
+    if (userData && userData.avatar_id) {
+      if (userData.avatar_id.startsWith('http')) {
+        setAvatarUrl(userData.avatar_id);  
+      } else {
+        const bucket = 'avatar-bucket';
+        const endPoint = 'storage.yandexcloud.net';
+        setAvatarUrl(`https://${bucket}.${endPoint}/avatars/avatar-${userData.avatar_id}.jpg`);
+      }
+    } else {
+      setAvatarUrl('/assets/logo account.png');
+    }
+  }, [userData]);
 
   return (
     <header className="w-full bg-white shadow-lg">
@@ -13,11 +28,11 @@ const NavBar = () => {
         <div onClick={() => navigate('/main')} className="flex items-center space-x-2 cursor-pointer">
           <img
             src="/assets/exercise.png"
-            alt="Логотип FitnessMonitor"
+            alt="Логотип BigCam"
             className="w-10 h-10 mt-0.5"
           />
           <h1 className="text-black text-2xl font-normal font-roboto">
-            FitnessRemote
+            BigCam
           </h1>
         </div>
 
@@ -28,11 +43,33 @@ const NavBar = () => {
               <span className="absolute -inset-1.5" />
               <img
                 alt="Аватар пользователя"
-                src={userData.avatar}
-                className="h-9 w-9 rounded-full"
+                src={avatarUrl}
+                className="h-9 w-9 rounded-full object-cover"
+                onError={(e) => {
+                  const currentSrc = e.target.src;
+                  if (currentSrc.includes('avatar-') && userData.avatar_id) {
+                    const bucket = 'avatar-bucket';
+                    const endPoint = 'storage.yandexcloud.net';
+                    const extensions = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
+                    
+                    
+                    const currentExt = currentSrc.split('.').pop();
+                    const currentIndex = extensions.indexOf(currentExt);
+                    
+                    
+                    if (currentIndex >= 0 && currentIndex < extensions.length - 1) {
+                      const nextExt = extensions[currentIndex + 1];
+                      e.target.src = `https://${bucket}.${endPoint}/avatars/avatar-${userData.avatar_id}.${nextExt}`;
+                      return;
+                    }
+                  }
+                  
+                  
+                  e.target.src = '/assets/logo account.png';
+                }}
               />
               <p className="text-black text-xl font-normal font-roboto">
-                {userData.fullName}
+                {userData?.name || userData?.fullname || 'Пользователь'}
               </p>
             </MenuButton>
           </div>
@@ -43,7 +80,7 @@ const NavBar = () => {
             <MenuItem>
               <a
                 onClick={() => navigate('/profile')}
-                className="block px-4 py-2 text-sm text-gray-700 data-[focus]:bg-gray-100 data-[focus]:outline-none font-Roboto cursor-pointer"
+                className="block px-4 py-2 text-sm text-gray-700 data-[focus]:bg-gray-100 data-[focus]:outline-none font-roboto cursor-pointer"
               >
                 Личный кабинет
               </a>
@@ -51,7 +88,7 @@ const NavBar = () => {
             <MenuItem>
               <a
                 onClick={() => navigate('/')}
-                className="block px-4 py-2 text-sm text-gray-700 data-[focus]:bg-gray-100 data-[focus]:outline-none font-Roboto cursor-pointer"
+                className="block px-4 py-2 text-sm text-gray-700 data-[focus]:bg-gray-100 data-[focus]:outline-none font-roboto cursor-pointer"
               >
                 Выход
               </a>
