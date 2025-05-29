@@ -3,6 +3,7 @@ const cors = require("cors");
 const multer = require("multer");
 const EasyYandexS3 = require("easy-yandex-s3").default;
 const { v4: uuidv4 } = require("uuid");
+require("dotenv").config();
 
 const app = express();
 const PORT = 8080;
@@ -14,8 +15,8 @@ app.use(multer().any());
 
 const s3 = new EasyYandexS3({
     auth: {
-        accessKeyId: "YCAJEM1mnDng6kt-XF4OTO0td",
-        secretAccessKey: "YCPfhdcWXy_xACsCYcZC5rk7zR-I1KqbdD_6zKmf",
+        accessKeyId: process.env.ACCESSKEYID,
+        secretAccessKey: process.env.SECRETACCESSKEY,
     },
     Bucket: "avatar-bucket",
     debug: false,
